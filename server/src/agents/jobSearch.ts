@@ -1,13 +1,273 @@
 import axios from 'axios';
+import * as cheerio from 'cheerio';
 import { Job, AgentLog, LogLevel } from '../types';
 
+export interface BaseScraper {
+  name: string;
+  search(query: string, location: string, logCallback: (log: AgentLog) => void): Promise<Job[]>;
+}
+
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
+];
+
+function getRandomUserAgent() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+/**
+ * Executes a structured search via the Google Custom Search JSON API.
+ * Returns empty array if credentials are missing or API fails.
+ */
+async function searchViaGoogleCustomSearch(
+  query: string, 
+  location: string, 
+  siteTarget: string,
+  log: (level: LogLevel, msg: string) => void
+): Promise<Job[]> {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const cx = process.env.GOOGLE_CX;
+
+  if (!apiKey || !cx) {
+    return [];
+  }
+
+  log('thought', `Google Custom Search API credentials found. Querying Google API...`);
+  const dork = `site:${siteTarget} "${query}" "${location}"`;
+
+  try {
+    const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
+      params: {
+        key: apiKey,
+        cx: cx,
+        q: dork
+      },
+      timeout: 8000
+    });
+
+    const items = response.data?.items || [];
+    const jobs: Job[] = [];
+
+    for (const result of items) {
+      const href = result.link || '';
+      const titleText = result.title || '';
+      const snippet = result.snippet || '';
+
+      // Double check if URL belongs to target site
+      if (href.includes(siteTarget) || href.includes(siteTarget.replace('in.', ''))) {
+        let parsedTitle = query;
+        let parsedCompany = 'Unknown Recruiter';
+
+        // Extract title and company details from Google search result title
+        if (titleText.toLowerCase().includes(' at ')) {
+          const parts = titleText.split(/\s+at\s+/i);
+          parsedTitle = parts[0]?.trim();
+          parsedCompany = parts[1]?.split(/[\-\|]/)[0]?.trim() || 'Hiring Company';
+        } else if (titleText.toLowerCase().includes(' hiring ')) {
+          const parts = titleText.split(/\s+hiring\s+/i);
+          parsedCompany = parts[0]?.trim();
+          parsedTitle = parts[1]?.split(/[\-\|]/)[0]?.trim() || query;
+        } else if (titleText.includes('-')) {
+          const parts = titleText.split('-');
+          parsedTitle = parts[0]?.trim() || query;
+          parsedCompany = parts[1]?.trim() || 'Hiring Company';
+        } else {
+          const parts = titleText.split(/[\-\|]/);
+          parsedTitle = parts[0]?.trim() || query;
+          parsedCompany = parts[1]?.trim() || 'Hiring Company';
+        }
+
+        // Clean up titles
+        parsedTitle = parsedTitle.replace(/\s+Job\s*$/i, '').replace(/hiring\s*$/i, '').trim();
+
+        jobs.push({
+          id: `${siteTarget.includes('linkedin') ? 'linkedin' : 'naukri'}-${Math.random().toString(36).substring(7)}`,
+          title: parsedTitle,
+          company: parsedCompany,
+          location: location || 'India',
+          description: snippet || 'No description snippet available.',
+          url: href,
+          source: siteTarget.includes('linkedin') ? 'LinkedIn (via search)' : 'Naukri (via search)'
+        });
+      }
+    }
+
+    log('success', `Google Custom Search returned ${jobs.length} valid results.`);
+    return jobs;
+  } catch (err: any) {
+    const details = err.response?.data?.error?.message || err.message;
+    log('warn', `Google Custom Search API call failed: ${details}.`);
+    return [];
+  }
+}
+
+export class LinkedInScraper implements BaseScraper {
+  name = 'LinkedIn India';
+
+  async search(query: string, location: string, logCallback: (log: AgentLog) => void): Promise<Job[]> {
+    const log = (level: LogLevel, msg: string) => logCallback({
+      id: Math.random().toString(36).substring(7),
+      timestamp: new Date().toISOString(),
+      agent: 'JobSearch',
+      level,
+      message: `[LinkedIn Crawler] ${msg}`
+    });
+
+    const siteTarget = 'in.linkedin.com/jobs/view/';
+
+    // Tier 1: Try Google Custom Search API if keys are present
+    if (process.env.GOOGLE_API_KEY && process.env.GOOGLE_CX) {
+      const googleJobs = await searchViaGoogleCustomSearch(query, location, siteTarget, log);
+      if (googleJobs.length > 0) return googleJobs;
+    }
+
+    // Tier 2: Organic DuckDuckGo scrape fallback
+    log('thought', `No Google API credentials or Google Search failed. Falling back to organic DuckDuckGo scraper...`);
+    const dork = `site:${siteTarget} "${query}" "${location}"`;
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(dork)}`;
+
+    try {
+      const response = await axios.get(searchUrl, {
+        headers: {
+          'User-Agent': getRandomUserAgent(),
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5'
+        },
+        timeout: 6000
+      });
+
+      const $ = cheerio.load(response.data);
+      const jobs: Job[] = [];
+
+      $('.result').each((_, el) => {
+        const titleLink = $(el).find('.result__title a.result__url');
+        const href = titleLink.attr('href') || '';
+        const titleText = titleLink.text().trim();
+        const snippet = $(el).find('.result__snippet').text().trim();
+
+        if (href.includes('linkedin.com/jobs/view/')) {
+          let parsedTitle = query;
+          let parsedCompany = 'Unknown Company';
+
+          if (titleText.toLowerCase().includes(' at ')) {
+            const parts = titleText.split(/\s+at\s+/i);
+            parsedTitle = parts[0]?.trim();
+            parsedCompany = parts[1]?.split(/[\-\|]/)[0]?.trim() || 'LinkedIn Company';
+          } else if (titleText.toLowerCase().includes(' hiring ')) {
+            const parts = titleText.split(/\s+hiring\s+/i);
+            parsedCompany = parts[0]?.trim();
+            parsedTitle = parts[1]?.split(/[\-\|]/)[0]?.trim() || query;
+          } else {
+            const parts = titleText.split(/[\-\|]/);
+            parsedTitle = parts[0]?.trim() || query;
+            parsedCompany = parts[1]?.trim() || 'LinkedIn Company';
+          }
+
+          parsedTitle = parsedTitle.replace(/\s+Job\s*$/i, '').replace(/hiring\s*$/i, '').trim();
+
+          jobs.push({
+            id: `linkedin-${Math.random().toString(36).substring(7)}`,
+            title: parsedTitle,
+            company: parsedCompany,
+            location: location || 'India',
+            description: snippet || 'No description preview available. Click details link to read on LinkedIn.',
+            url: href,
+            source: 'LinkedIn'
+          });
+        }
+      });
+
+      log('success', `Scraped ${jobs.length} jobs organically from LinkedIn India.`);
+      return jobs;
+    } catch (err: any) {
+      log('warn', `Organic scraping failed: ${err.message}`);
+      return [];
+    }
+  }
+}
+
+export class NaukriScraper implements BaseScraper {
+  name = 'Naukri';
+
+  async search(query: string, location: string, logCallback: (log: AgentLog) => void): Promise<Job[]> {
+    const log = (level: LogLevel, msg: string) => logCallback({
+      id: Math.random().toString(36).substring(7),
+      timestamp: new Date().toISOString(),
+      agent: 'JobSearch',
+      level,
+      message: `[Naukri Crawler] ${msg}`
+    });
+
+    const siteTarget = 'naukri.com/job-listings-';
+
+    // Tier 1: Try Google Custom Search API if keys are present
+    if (process.env.GOOGLE_API_KEY && process.env.GOOGLE_CX) {
+      const googleJobs = await searchViaGoogleCustomSearch(query, location, siteTarget, log);
+      if (googleJobs.length > 0) return googleJobs;
+    }
+
+    // Tier 2: Organic DuckDuckGo scrape fallback
+    log('thought', `No Google API credentials or Google Search failed. Falling back to organic DuckDuckGo scraper...`);
+    const dork = `site:${siteTarget} "${query}" "${location}"`;
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(dork)}`;
+
+    try {
+      const response = await axios.get(searchUrl, {
+        headers: {
+          'User-Agent': getRandomUserAgent(),
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5'
+        },
+        timeout: 6000
+      });
+
+      const $ = cheerio.load(response.data);
+      const jobs: Job[] = [];
+
+      $('.result').each((_, el) => {
+        const titleLink = $(el).find('.result__title a.result__url');
+        const href = titleLink.attr('href') || '';
+        const titleText = titleLink.text().trim();
+        const snippet = $(el).find('.result__snippet').text().trim();
+
+        if (href.includes('naukri.com/job-listings-')) {
+          const parts = titleText.split(/\s*-\s*/);
+          let parsedTitle = parts[0]?.trim() || query;
+          let parsedCompany = parts[1]?.trim() || 'Naukri Recruiter';
+
+          parsedTitle = parsedTitle.replace(/\s+Job\s*$/i, '').trim();
+
+          jobs.push({
+            id: `naukri-${Math.random().toString(36).substring(7)}`,
+            title: parsedTitle,
+            company: parsedCompany,
+            location: location || 'India',
+            description: snippet || 'No description preview available. Click details link to read on Naukri.',
+            url: href,
+            source: 'Naukri'
+          });
+        }
+      });
+
+      log('success', `Scraped ${jobs.length} jobs organically from Naukri.`);
+      return jobs;
+    } catch (err: any) {
+      log('warn', `Organic scraping failed: ${err.message}`);
+      return [];
+    }
+  }
+}
+
 export class JobSearchAgent {
-  private appId: string | undefined;
-  private appKey: string | undefined;
+  private scrapers: BaseScraper[] = [];
 
   constructor() {
-    this.appId = process.env.ADZUNA_APP_ID;
-    this.appKey = process.env.ADZUNA_APP_KEY;
+    this.scrapers = [
+      new LinkedInScraper(),
+      new NaukriScraper()
+    ];
   }
 
   async run(
@@ -15,55 +275,38 @@ export class JobSearchAgent {
     location: string,
     logCallback: (log: AgentLog) => void
   ): Promise<Job[]> {
-    this.log(logCallback, 'thought', `Initializing job search agent... Target: "${query}" in "${location}"`);
+    const finalLocation = location || 'India';
+    this.log(logCallback, 'thought', `Initializing JobSearchAgent... Targeting: "${query}" in "${finalLocation}"`);
 
-    if (this.appId && this.appKey) {
-      this.log(logCallback, 'info', `Adzuna API credentials found. Dispatching live API search...`);
-      try {
-        const country = 'us'; // Default to US, can be configured
-        const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1`;
-        
-        this.log(logCallback, 'thought', `Fetching from Adzuna API: ${url}`);
-        
-        const response = await axios.get(url, {
-          params: {
-            app_id: this.appId,
-            app_key: this.appKey,
-            results_per_page: 8,
-            what: query,
-            where: location,
-            'content-type': 'application/json'
-          }
-        });
+    // Run scrapers concurrently
+    const promises = this.scrapers.map(scraper => {
+      this.log(logCallback, 'info', `Launching crawler for: ${scraper.name}...`);
+      return scraper.search(query, finalLocation, logCallback);
+    });
 
-        if (response.data && response.data.results) {
-          const rawJobs = response.data.results;
-          this.log(logCallback, 'success', `Successfully retrieved ${rawJobs.length} live job listings from Adzuna.`);
-          
-          return rawJobs.map((rj: any) => ({
-            id: rj.id || Math.random().toString(36).substring(7),
-            title: rj.title.replace(/<\/?[^>]+(>|$)/g, ""), // strip html
-            company: rj.company?.display_name || 'Unknown Company',
-            location: rj.location?.display_name || location || 'Remote',
-            salary: rj.salary_min ? `$${Math.round(rj.salary_min).toLocaleString()} - $${Math.round(rj.salary_max).toLocaleString()}` : 'Competitive',
-            description: rj.description.replace(/<\/?[^>]+(>|$)/g, ""),
-            url: rj.redirect_url,
-            source: 'Adzuna API'
-          }));
-        }
-      } catch (err: any) {
-        this.log(logCallback, 'warn', `Adzuna search failed: ${err.message}. Falling back to mock engine.`);
+    const results = await Promise.all(promises);
+    let crawledJobs = results.flat();
+
+    // Remove duplicates
+    const seen = new Set<string>();
+    crawledJobs = crawledJobs.filter(job => {
+      const key = `${job.title.toLowerCase()}|${job.company.toLowerCase()}`;
+      if (seen.has(key) || seen.has(job.url || '')) {
+        return false;
       }
-    } else {
-      this.log(logCallback, 'info', `Adzuna API keys not present. Bootstrapping mock job engine...`);
+      seen.add(key);
+      if (job.url) seen.add(job.url);
+      return true;
+    });
+
+    if (crawledJobs.length > 0) {
+      this.log(logCallback, 'success', `Successfully retrieved ${crawledJobs.length} organic jobs from LinkedIn & Naukri.`);
+      return crawledJobs;
     }
 
-    // Delay to simulate search processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockJobs = this.generateMockJobs(query, location);
-    this.log(logCallback, 'success', `Generated ${mockJobs.length} highly matched mock job listings based on query.`);
-    return mockJobs;
+    // STRICT REQUIREMENT: No mock fallback data allowed. Return empty results.
+    this.log(logCallback, 'warn', `No jobs found or scrapers rate-limited. Returning empty results as requested.`);
+    return [];
   }
 
   private log(callback: (log: AgentLog) => void, level: LogLevel, message: string) {
@@ -73,71 +316,6 @@ export class JobSearchAgent {
       agent: 'JobSearch',
       level,
       message
-    });
-  }
-
-  private generateMockJobs(query: string, location: string): Job[] {
-    const defaultJobs = [
-      {
-        title: 'Senior Frontend Engineer (Angular)',
-        company: 'Vercel',
-        location: 'San Francisco, CA (Hybrid)',
-        salary: '$140,000 - $185,000',
-        description: 'We are looking for a Senior Frontend Engineer to lead development on our dashboard. You will work closely with design and product teams to craft high-performance standalone Angular components. Requirements: 5+ years of experience, strong TypeScript skills, experience with RxJS, state management, and performance tuning. Knowledge of modern Signals is highly preferred.',
-      },
-      {
-        title: 'Angular Developer',
-        company: 'Google',
-        location: 'Mountain View, CA (On-site)',
-        salary: '$150,000 - $210,000',
-        description: 'Join the Angular core internal tooling team! You will design and deploy next-generation administrative interfaces. Requirements: Strong experience in Angular, RxJS, reactive forms, and UI optimization. Experience building complex charts, SVG rendering pipelines, and handling high-frequency real-time client side data models is a big plus.',
-      },
-      {
-        title: 'Fullstack Software Engineer (TypeScript & Node)',
-        company: 'Linear',
-        location: 'Remote (US)',
-        salary: '$130,000 - $170,000',
-        description: 'Linear is looking for a software engineer to join our core product team. You will build and maintain backend GraphQL/REST endpoints using Express/Fastify and Node, and develop modern interactive client interfaces using Angular. We emphasize writing extremely clean, lightweight TypeScript and Vanilla CSS. Strong layout and animation skills are key.',
-      },
-      {
-        title: 'UI Software Engineer',
-        company: 'Stripe',
-        location: 'Seattle, WA (Hybrid)',
-        salary: '$145,000 - $190,000',
-        description: 'Stripe is looking for a UI Engineer to design next-gen dashboard workflows. You must have a passion for visual design, CSS micro-animations, glassmorphic layouts, and high-quality user experiences. You will collaborate on frontend component library development. Experience in clean Vanilla CSS and Angular/React is required.',
-      },
-      {
-        title: 'Junior Angular Developer',
-        company: 'Figma',
-        location: 'San Francisco, CA (Hybrid)',
-        salary: '$90,000 - $120,000',
-        description: 'We are looking for a Junior Angular Developer to join our UI toolkit team. You will help implement clean responsive stylesheets, maintain design tokens, and build standalone components. Requirements: 1-3 years of frontend experience, intermediate TypeScript, solid understanding of CSS variables and flex layouts.',
-      }
-    ];
-
-    const targetLoc = location || 'Remote';
-    // Tailor mock data slightly to fit user query
-    return defaultJobs.map((job, index) => {
-      let title = job.title;
-      let description = job.description;
-
-      // Adjust title to match query keyword if needed
-      if (query && !job.title.toLowerCase().includes(query.toLowerCase())) {
-        if (index === 0) title = `Lead ${query} Engineer`;
-        if (index === 1) title = `Staff ${query} Developer`;
-        if (index === 2) title = `Fullstack ${query} Architect`;
-        if (index === 4) title = `Associate ${query} Developer`;
-      }
-
-      return {
-        id: `mock-job-${index + 1}`,
-        title,
-        company: job.company,
-        location: targetLoc.toLowerCase() === 'remote' ? 'Remote (US)' : `${targetLoc} (Hybrid)`,
-        salary: job.salary,
-        description,
-        source: 'Mock Career Engine'
-      };
     });
   }
 }

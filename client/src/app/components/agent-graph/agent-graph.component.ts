@@ -205,7 +205,7 @@ export class AgentGraphComponent {
       return {
         active: status === 'searching',
         completed: ['matching', 'tailoring', 'preparing', 'completed'].includes(status) && this.agentService.jobs().length > 0,
-        error: status === 'error' && status === 'searching',
+        error: status === 'error' && this.agentService.jobs().length === 0,
         idle: ['idle', 'tailoring', 'preparing'].includes(status) && this.agentService.jobs().length === 0
       };
     }
@@ -214,7 +214,7 @@ export class AgentGraphComponent {
       return {
         active: status === 'matching',
         completed: ['tailoring', 'preparing', 'completed'].includes(status) && this.agentService.matches().length > 0,
-        error: status === 'error' && status === 'matching',
+        error: status === 'error' && this.agentService.jobs().length > 0 && this.agentService.matches().length === 0,
         idle: ['idle', 'searching'].includes(status)
       };
     }
@@ -224,7 +224,7 @@ export class AgentGraphComponent {
       return {
         active: status === 'tailoring',
         completed: (status === 'preparing' || status === 'completed') && !!hasTailoring,
-        error: status === 'error' && status === 'tailoring',
+        error: status === 'error' && !!this.agentService.selectedJobId() && !this.agentService.selectedTailoredResume(),
         idle: !['tailoring', 'preparing', 'completed'].includes(status) || !hasTailoring
       };
     }
@@ -234,7 +234,7 @@ export class AgentGraphComponent {
       return {
         active: status === 'preparing',
         completed: status === 'completed' && !!hasPrep,
-        error: status === 'error' && status === 'preparing',
+        error: status === 'error' && !!this.agentService.selectedTailoredResume() && !this.agentService.selectedInterviewPrep(),
         idle: status !== 'preparing' && !hasPrep
       };
     }

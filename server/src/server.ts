@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import * as path from 'path';
 import { AgentOrchestrator } from './agents/orchestrator';
+import { LLMService } from './llm';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -130,7 +131,7 @@ app.get('/api/stream', (req, res) => {
 });
 
 // Serve frontend static files if they exist (production build support)
-const clientBuildPath = path.join(__dirname, '../../client/dist');
+const clientBuildPath = path.join(__dirname, '../../client/dist/client/browser');
 app.use(express.static(clientBuildPath));
 
 app.get('*', (req, res, next) => {

@@ -101,10 +101,17 @@ import { Job, MatchResult } from '../../types';
                     <p class="detail-text">{{ match.experienceRelevance }}</p>
                   </div>
 
-                  <div class="card-actions">
+                  <div class="card-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    @if (job.url) {
+                      <a [href]="job.url" target="_blank" class="btn btn-secondary" style="text-decoration: none; font-size: 0.85rem;" (click)="$event.stopPropagation()">
+                        🔗 Open on {{ job.source }}
+                      </a>
+                    } @else {
+                      <div></div>
+                    }
                     <button 
                       class="btn btn-primary"
-                      (click)="onTailor(job.id)"
+                      (click)="onTailor(job.id); $event.stopPropagation()"
                       [disabled]="agentService.status() === 'tailoring' || agentService.status() === 'preparing'"
                     >
                       @if (agentService.status() === 'tailoring' && isSelected(job.id)) {
