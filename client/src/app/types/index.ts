@@ -60,6 +60,8 @@ export interface AgentState {
   resumeText: string;
   jobQuery: string;
   location: string;
+  expectedCtc?: string;
+  useHistory?: boolean;
   foundJobs: Job[];
   selectedJobId?: string;
   matchingResults: MatchResult[];
@@ -69,3 +71,36 @@ export interface AgentState {
   logs: AgentLog[];
   status: 'idle' | 'searching' | 'matching' | 'tailoring' | 'preparing' | 'completed' | 'error';
 }
+
+export interface JobListing {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  location: string;
+  requirements?: string[];
+  url?: string;
+  status: 'applied' | 'interviewing' | 'rejected' | 'accepted' | 'scraped';
+}
+
+export interface MockInterview {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  company: string;
+  transcript: { role: 'interviewer' | 'candidate'; text: string; timestamp: Date }[];
+  performanceScore: number;
+  feedback: string[];
+  actionItems: string[];
+  createdAt: Date;
+}
+
+export interface GeneratedArtifact {
+  id: string;
+  jobId: string;
+  tailoredResume: TailoredResume;
+  coverLetter: string;
+  coldOutreachDraft?: string;
+  createdAt: Date;
+}
+

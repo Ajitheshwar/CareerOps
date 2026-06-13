@@ -1,0 +1,158 @@
+<div class="matches-wrapper fade-in">
+  <div class="matches-header">
+    <h2>Target Job Matchings</h2>
+    <p>Explore parsed opportunities, evaluated against your resume using LLM analysis.</p>
+  </div>
+
+  @if (jobs().length === 0) {
+    <app-empty-state 
+      title="No job matchings yet" 
+      message="Configure your resume and hit 'Analyze & Match Jobs' to see matching ratios here." 
+      icon="job"
+    ></app-empty-state>
+  } @else {
+    <!-- Source Filter Tabs -->
+    <div class="filter-tabs-container">
+      <button 
+        class="filter-tab" 
+        [class.active]="activeFilter() === 'all'" 
+        (click)="setFilter('all')"
+      >
+        <span class="tab-icon">🌐</span> All Jobs
+        <span class="count-badge">{{ totalCount() }}</span>
+      </button>
+      <button 
+        class="filter-tab linkedin-tab" 
+        [class.active]="activeFilter() === 'linkedin'" 
+        (click)="setFilter('linkedin')"
+      >
+        <span class="tab-icon">💼</span> LinkedIn
+        <span class="count-badge">{{ linkedinCount() }}</span>
+      </button>
+      <button 
+        class="filter-tab naukri-tab" 
+        [class.active]="activeFilter() === 'naukri'" 
+        (click)="setFilter('naukri')"
+      >
+        <span class="tab-icon">🎯</span> Naukri
+        <span class="count-badge">{{ naukriCount() }}</span>
+      </button>
+    </div>
+
+    @if (filteredJobs().length === 0) {
+      <app-empty-state 
+        title="No jobs match this filter" 
+        message="Try switching to 'All Jobs' or search for new jobs using the profile panel." 
+        icon="search"
+      ></app-empty-state>
+    } @else {
+      <div class="matches-grid">
+        @for (job of filteredJobs(); track job.id) {
+          @let match = getMatchResult(job.id);
+          <div 
+            class="glass-card job-card" 
+            [ngClass]="{ 'selected': isSelected(job.id), 'expanded': expandedJobId() === job.id }"
+            (click)="toggleExpand(job.id)"
+          >
+            <div class="card-top">
+              <div class="job-info">
+                <span class="source-badge">{{ job.source }}</span>
+                <h3>{{ job.title }}</h3>
+                <p class="company-name">{{ job.company }}</p>
+                <div class="job-meta">
+                  <span class="meta-item">📍 {{ job.location }}</span>
+                  @if (job.salary) {
+                    <span class="meta-item">💵 {{ job.salary }}</span>
+                  }
+                </div>
+              </div>
+
+              @if (match) {
+                <div class="progress-ring-container">
+                  <svg width="64" height="64" class="progress-svg">
+                    <circle class="circle-bg" cx="32" cy="32" r="26" />
+                    <circle 
+                      class="circle-fg" 
+                      [ngClass]="getScoreColorClass(match.matchScore)"
+                      cx="32" 
+                      cy="32" 
+                      r="26" 
+                      [style.strokeDashoffset]="calculateOffset(match.matchScore)"
+                    />
+                  </svg>
+                  <span class="progress-ring-text" [ngClass]="getScoreColorClass(match.matchScore)">
+                    {{ match.matchScore }}%
+                  </span>
+                </div>
+              }
+            </div>
+
+            <!-- Expanded Details Section -->
+            @if (expandedJobId() === job.id && match) {
+              <div class="expanded-details fade-in" (click)="$event.stopPropagation()">
+                <div class="details-divider"></div>
+                
+                <div class="section-block">
+                  <h5>Fit Evaluation</h5>
+                  <p class="detail-text">{{ match.fitExplanation }}</p>
+                </div>
+
+                <div class="row-skills">
+                  <div class="skills-col">
+                    <h5>Matching Strengths</h5>
+                    <div class="skills-list">
+                      @for (skill of match.matchingSkills; track skill) {
+                        <span class="badge badge-green">{{ skill }}</span>
+                      } @empty {
+                        <span class="no-skills">None matched</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="skills-col">
+                    <h5>Target Skill Gaps</h5>
+                    <div class="skills-list">
+                      @for (gap of match.skillGaps; track gap) {
+                        <span class="badge badge-rose">{{ gap }}</span>
+                      } @empty {
+                        <span class="no-skills">No critical gaps!</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="section-block">
+                  <h5>Career Relevancy</h5>
+                  <p class="detail-text">{{ match.experienceRelevance }}</p>
+                </div>
+
+                <div class="card-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                  @if (job.url) {
+                    <a [href]="job.url" target="_blank" class="btn btn-secondary" style="text-decoration: none; font-size: 0.85rem;" (click)="$event.stopPropagation()">
+                      🔗 Open on {{ job.source }}
+                    </a>
+                  } @else {
+                    <div></div>
+                  }
+                  <button 
+                    class="btn btn-primary"
+                    (click)="onTailor(job.id); $event.stopPropagation()"
+                    [disabled]="agentService.status() === 'tailoring' || agentService.status() === 'preparing'"
+                  >
+                    @if (agentService.status() === 'tailoring' && isSelected(job.id)) {
+                      <span>Tailoring Resume...</span>
+                    } @else if (agentService.status() === 'preparing' && isSelected(job.id)) {
+                      <span>Coaching Prep...</span>
+                    } @else {
+                      <span>Tailor Materials & Prep Interview</span>
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

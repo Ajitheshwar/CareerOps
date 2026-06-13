@@ -1,0 +1,115 @@
+<div class="glass-card fade-in">
+  <div class="profile-header">
+    <h2>Career Profile & Resume Setup</h2>
+    <p>Define your background and the target positions you want to find and match.</p>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="profile-form">
+    <div class="row">
+      <div class="form-group col">
+        <label class="form-label" for="jobQuery">Target Role / Job Title</label>
+        <input 
+          type="text" 
+          id="jobQuery" 
+          class="form-input" 
+          [(ngModel)]="jobQuery" 
+          name="jobQuery" 
+          placeholder="e.g. Angular Developer, Frontend Engineer" 
+          required
+        />
+      </div>
+
+      <div class="form-group col">
+        <label class="form-label" for="location">Target Location</label>
+        <input 
+          type="text" 
+          id="location" 
+          class="form-input" 
+          [(ngModel)]="location" 
+          name="location" 
+          placeholder="e.g. Remote, Hyderabad, India" 
+          required
+        />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group col">
+        <label class="form-label" for="expectedCtc">Expected CTC (e.g. 12 LPA)</label>
+        <input 
+          type="text" 
+          id="expectedCtc" 
+          class="form-input" 
+          [(ngModel)]="expectedCtc" 
+          name="expectedCtc" 
+          placeholder="e.g. 12 LPA, 100K USD" 
+        />
+      </div>
+
+      <div class="form-group col">
+        <label class="form-label">Search Source</label>
+        <div class="source-toggle-container">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="useHistory" 
+              name="useHistory"
+              class="toggle-checkbox"
+            />
+            <span class="toggle-text">Use Local History</span>
+          </label>
+          <p class="toggle-desc">
+            {{ useHistory ? 'Offline Mode: Scan cached local database records' : 'Online Mode: Fetch live jobs from Google Search via SerpApi' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="resume-label-wrapper">
+        <label class="form-label" for="resume">Your Resume (Upload PDF/Docx or Paste Text)</label>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <input 
+            type="file" 
+            id="fileUpload" 
+            (change)="onFileSelected($event)" 
+            accept=".pdf,.docx,.doc" 
+            style="display: none;" 
+            #fileInput
+          />
+          <button type="button" class="btn-text" (click)="fileInput.click()">
+            📁 {{ uploadStatus() || 'Upload File' }}
+          </button>
+          <span style="color: var(--text-muted);">|</span>
+          <button type="button" class="btn-text" (click)="loadSampleResume()">Load Sample Resume</button>
+        </div>
+      </div>
+      <textarea 
+        id="resume" 
+        class="form-textarea" 
+        [(ngModel)]="resumeText" 
+        name="resumeText" 
+        rows="12" 
+        placeholder="Paste your professional history, bullet points, skills, and summary here or click 'Upload File' above..."
+        required
+      ></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="resetForm()">Clear Form</button>
+      <button 
+        type="submit" 
+        class="btn btn-primary" 
+        [disabled]="agentService.status() === 'searching' || agentService.status() === 'matching'"
+      >
+        @if (agentService.status() === 'searching') {
+          <span>Searching Jobs...</span>
+        } @else if (agentService.status() === 'matching') {
+          <span>Matching Resume...</span>
+        } @else {
+          <span>Analyze & Match Jobs</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

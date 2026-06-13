@@ -1,29 +1,96 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
+  /* ==========================================
+     BRAND COLORS & NEUTRAL SEMANTIC SCALES
+     ========================================== */
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-500: #14b8a6;
+  --color-primary-900: #115e59;
+  
+  --color-secondary-50: #faf5ff;
+  --color-secondary-500: #a855f7;
+  --color-secondary-900: #581c87;
+
+  /* Neutral scale (Slate & Dark Blues) */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-400: #94a3b8;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* Semantic UI Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #f43f5e;
+  --color-info: #06b6d4;
+
+  /* Backward Compatibility Mappings for Existing Styles */
   --bg-primary: #0a0e17;
-  --bg-secondary: #0f172a;
+  --bg-secondary: var(--color-slate-900);
   --bg-card: rgba(17, 24, 39, 0.7);
   --bg-card-hover: rgba(30, 41, 59, 0.8);
   --border-color: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(6, 182, 212, 0.4);
   
-  --accent-cyan: #06b6d4;
+  --accent-cyan: var(--color-info);
   --accent-cyan-rgb: 6, 182, 212;
-  --accent-purple: #a855f7;
+  --accent-purple: var(--color-secondary-500);
   --accent-purple-rgb: 168, 85, 247;
-  --accent-green: #10b981;
+  --accent-green: var(--color-success);
   --accent-green-rgb: 16, 185, 129;
-  --accent-rose: #f43f5e;
+  --accent-rose: var(--color-error);
   
   --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-  --text-inverse: #0f172a;
-  
+  --text-muted: var(--color-slate-400);
+  --text-inverse: var(--color-slate-900);
+
+  /* ==========================================
+     TYPOGRAPHY
+     ========================================== */
   --font-main: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ==========================================
+     SPACING & LAYOUT (8px Grid)
+     ========================================== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* ==========================================
+     BORDERS & SHADOWS
+     ========================================== */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 24px;
+
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

@@ -60,6 +60,8 @@ export interface AgentState {
   resumeText: string;
   jobQuery: string;
   location: string;
+  expectedCtc?: string;
+  useHistory?: boolean;
   foundJobs: Job[];
   selectedJobId?: string;
   matchingResults: MatchResult[];

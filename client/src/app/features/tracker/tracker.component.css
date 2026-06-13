@@ -1,0 +1,149 @@
+.tracker-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tracker-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.add-job-card {
+  padding: 16px !important;
+  margin-bottom: 8px;
+}
+.add-job-card h4 {
+  font-size: 1rem;
+  color: #fff;
+}
+.add-job-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+.row {
+  display: flex;
+  gap: 16px;
+}
+.col {
+  flex: 1;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Pipeline grid */
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .pipeline-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pipeline-col {
+  background: rgba(15, 23, 42, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 480px;
+}
+
+.col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+.col-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.col-header h4 {
+  font-size: 0.95rem;
+  color: #fff;
+  flex: 1;
+}
+.count-pill {
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.job-track-card {
+  padding: 12px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: default;
+}
+.job-track-card h5 {
+  font-size: 0.9rem;
+  color: #fff;
+}
+.job-track-card .company {
+  font-size: 0.8rem;
+  color: var(--accent-cyan);
+  font-weight: 500;
+}
+.job-track-card .meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.job-link {
+  font-size: 0.75rem;
+  color: var(--accent-purple);
+  text-decoration: none;
+  font-weight: 500;
+}
+.job-link:hover {
+  text-decoration: underline;
+}
+
+.card-controls {
+  margin-top: 4px;
+  display: flex;
+}
+.status-select {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.empty-column-state {
+  text-align: center;
+  margin: auto 0;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-style: italic;
+}

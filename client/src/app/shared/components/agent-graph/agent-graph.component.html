@@ -1,0 +1,59 @@
+<!-- Floating Active Agent Coordination Trigger Button -->
+<button 
+  class="floating-trigger-btn animate-glow" 
+  [class.running]="hasActiveAgent()" 
+  (click)="toggleDrawer()"
+  [title]="hasActiveAgent() ? 'Agent workflow is running. Click to view coordination graph.' : 'Agent workflow is idle. Click to view coordination graph.'"
+>
+  @if (hasActiveAgent()) {
+    <span class="active-pulse-ring"></span>
+    <span class="trigger-icon">{{ activeAgentIcon() }}</span>
+    <span class="trigger-text">RUNNING</span>
+  } @else {
+    <span class="trigger-icon">🧠</span>
+    <span class="trigger-text">IDLE</span>
+  }
+</button>
+
+@if (isOpen()) {
+  <div class="agent-drawer-backdrop" (click)="toggleDrawer()"></div>
+}
+<div class="agent-drawer" [class.open]="isOpen()">
+  <div class="drawer-content">
+    <div class="glass-card graph-wrapper fade-in">
+      <div class="title">
+        <h3>Active Agent Coordination</h3>
+        <button class="btn-close-drawer" (click)="toggleDrawer()" title="Close Drawer">×</button>
+      </div>
+      <p class="subtitle">Real-time status of the multi-agent collaborative workspace</p>
+
+      <div class="nodes-container" [class.has-active-agent]="hasActiveAgent()">
+        <!-- Main Orchestrator Node -->
+        <div class="node-item orchestrator-node" [ngClass]="orchestratorNode().classes">
+          <div class="node-icon">🧠</div>
+          <div class="node-details">
+            <h4>Orchestrator</h4>
+            <span class="node-status">{{ orchestratorNode().statusText }}</span>
+          </div>
+        </div>
+
+        <div class="connector-line vertical"></div>
+
+        <!-- Worker Agents (Vertical List) -->
+        @for (node of workerNodesState(); track node.id; let i = $index) {
+          <div class="node-item worker-node" [ngClass]="node.classes">
+            <div class="node-icon">{{ node.icon }}</div>
+            <div class="node-details">
+              <h4>{{ node.label }}</h4>
+              <p class="node-desc">{{ node.desc }}</p>
+              <span class="node-status">{{ node.statusText }}</span>
+            </div>
+          </div>
+          @if (i < workerNodesState().length - 1) {
+            <div class="connector-line vertical"></div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -59,21 +59,8 @@ Analyze the requirements, compare with the candidate's history, identify potenti
         jobId
       };
     } catch (err: any) {
-      this.log(logCallback, 'warn', `Interview prep generation failed: ${err.message}. Providing fallback prep guide.`);
-      
-      return {
-        jobId,
-        questions: [
-          {
-            id: 'q1',
-            question: `How do your skills and background make you a fit for the ${jobTitle} position at ${company}?`,
-            type: 'behavioral',
-            answerTemplate: 'Situation: Highlight your relevant experience. Task: State what you wanted to achieve. Action: Explain the steps you took. Result: Summarize the positive outcome.',
-            tips: 'Focus on connecting your technical achievements directly with the objectives of the role.'
-          }
-        ],
-        generalAdvice: 'Review the job description thoroughly and prepare 2-3 stories illustrating how you solved technical challenges.'
-      };
+      this.log(logCallback, 'warn', `Interview prep generation failed: ${err.message}`);
+      throw err;
     }
   }
 

@@ -1,0 +1,124 @@
+<aside class="sidebar glass-card" [class.collapsed]="isSidebarCollapsed()">
+  <button class="sidebar-toggle-btn" (click)="toggleSidebar()" [title]="isSidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+    {{ isSidebarCollapsed() ? '▶' : '◀' }}
+  </button>
+
+  <div class="sidebar-brand">
+    <span class="brand-glow"></span>
+    @if (!isSidebarCollapsed()) {
+      <h2>CareerOps <span>v1.0</span></h2>
+      <p class="brand-subtitle">Multi-Agent Career Agent</p>
+    } @else {
+      <h2 class="brand-collapsed" title="CareerOps v1.0">⚡</h2>
+    }
+  </div>
+
+  <nav class="sidebar-nav">
+    <a 
+      class="nav-item" 
+      [routerLink]="['/profile']"
+      routerLinkActive="active"
+      [title]="isSidebarCollapsed() ? 'Profile & Resume' : ''"
+    >
+      <span class="nav-icon">👤</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Profile & Resume</span>
+      }
+    </a>
+    
+    <a 
+      class="nav-item" 
+      [routerLink]="agentService.jobs().length > 0 ? ['/matches'] : null"
+      routerLinkActive="active"
+      [class.disabled]="agentService.jobs().length === 0"
+      [title]="isSidebarCollapsed() ? 'Target Matches' : ''"
+    >
+      <span class="nav-icon">📊</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Target Matches</span>
+        @if (agentService.jobs().length > 0) {
+          <span class="nav-count">{{ agentService.jobs().length }}</span>
+        }
+      } @else if (agentService.jobs().length > 0) {
+        <span class="nav-badge-dot" title="Matches available"></span>
+      }
+    </a>
+
+    <a 
+      class="nav-item" 
+      [routerLink]="agentService.selectedJobId() ? ['/tailor'] : null"
+      routerLinkActive="active"
+      [class.disabled]="!agentService.selectedJobId()"
+      [title]="isSidebarCollapsed() ? 'Resume Tailor' : ''"
+    >
+      <span class="nav-icon">✍️</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Resume Tailor</span>
+      }
+    </a>
+
+    <a 
+      class="nav-item" 
+      [routerLink]="agentService.selectedJobId() ? ['/coach'] : null"
+      routerLinkActive="active"
+      [class.disabled]="!agentService.selectedJobId()"
+      [title]="isSidebarCollapsed() ? 'Interview Coach' : ''"
+    >
+      <span class="nav-icon">💬</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Interview Coach</span>
+      }
+    </a>
+
+    <a 
+      class="nav-item" 
+      [routerLink]="['/mentor']"
+      routerLinkActive="active"
+      [title]="isSidebarCollapsed() ? 'Mentor Chat' : ''"
+    >
+      <span class="nav-icon">🤖</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Mentor Chat</span>
+      }
+    </a>
+
+    <a 
+      class="nav-item" 
+      [routerLink]="['/tracker']"
+      routerLinkActive="active"
+      [title]="isSidebarCollapsed() ? 'Job Tracker' : ''"
+    >
+      <span class="nav-icon">📋</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Job Tracker</span>
+      }
+    </a>
+
+    <a 
+      class="nav-item" 
+      [routerLink]="['/analytics']"
+      routerLinkActive="active"
+      [title]="isSidebarCollapsed() ? 'Interview Analytics' : ''"
+    >
+      <span class="nav-icon">📈</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Interview Analytics</span>
+      }
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    @if (!isSidebarCollapsed()) {
+      <div class="session-info">
+        <span class="status-label">Engine status:</span>
+        <span class="status-value" [ngClass]="agentService.status()">
+          {{ getStatusLabel(agentService.status()) }}
+        </span>
+      </div>
+    } @else {
+      <div class="session-info-collapsed">
+        <span class="status-dot-indicator" [ngClass]="agentService.status()" [title]="'Engine: ' + getStatusLabel(agentService.status())"></span>
+      </div>
+    }
+  </div>
+</aside>

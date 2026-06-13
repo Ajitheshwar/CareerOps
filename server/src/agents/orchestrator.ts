@@ -1,9 +1,11 @@
 import { AgentState, AgentLog, Job, MatchResult, LogLevel } from '../types';
 import { LLMService } from '../llm';
-import { JobSearchAgent } from './jobSearch';
+import { JobSearchAgent } from './jobSearchSerp';
 import { ResumeAnalyzerAgent } from './resumeAnalyzer';
 import { TailoringAgent } from './tailoring';
 import { InterviewPrepAgent } from './interviewPrep';
+import { QueryGeneratorAgent } from './queryGenerator';
+import { saveJobHistory, updateJobTailoring, updateJobInterviewPrep, getAllJobHistory } from '../db';
 
 export class AgentOrchestrator {
   private llm: LLMService;
@@ -11,6 +13,7 @@ export class AgentOrchestrator {
   private resumeAnalyzer: ResumeAnalyzerAgent;
   private tailoringAgent: TailoringAgent;
   private interviewPrepAgent: InterviewPrepAgent;
+  private queryGeneratorAgent: QueryGeneratorAgent;
 
   // Global in-memory state for simplicity in this session
   private state: AgentState = {
@@ -35,6 +38,7 @@ export class AgentOrchestrator {
     this.resumeAnalyzer = new ResumeAnalyzerAgent(this.llm);
     this.tailoringAgent = new TailoringAgent(this.llm);
     this.interviewPrepAgent = new InterviewPrepAgent(this.llm);
+    this.queryGeneratorAgent = new QueryGeneratorAgent(this.llm);
   }
 
   getState(): AgentState {
@@ -85,21 +89,82 @@ export class AgentOrchestrator {
   /**
    * Run the job search and analysis phase
    */
-  async runJobSearchAndMatch(resumeText: string, jobQuery: string, location: string) {
+  async runJobSearchAndMatch(
+    resumeText: string, 
+    jobQuery: string, 
+    location: string, 
+    expectedCtc: string, 
+    useHistory: boolean
+  ) {
     this.state.resumeText = resumeText;
     this.state.jobQuery = jobQuery;
     this.state.location = location;
+    this.state.expectedCtc = expectedCtc;
+    this.state.useHistory = useHistory;
     this.state.status = 'searching';
     this.state.foundJobs = [];
     this.state.matchingResults = [];
     this.notifyState();
 
-    this.addLog('Orchestrator', 'thought', `Starting CareerOps pipeline. Query: "${jobQuery}" | Location: "${location}"`);
-    this.addLog('Orchestrator', 'info', 'Delegating job search to JobSearchAgent...');
+    this.addLog('Orchestrator', 'thought', `Starting CareerOps pipeline. Mode: ${useHistory ? 'Offline History' : 'Live Crawl'} | Expected CTC: "${expectedCtc}"`);
 
     try {
-      // 1. Search Jobs
-      const jobs = await this.jobSearchAgent.run(jobQuery, location, (log) => {
+      if (useHistory) {
+        this.addLog('Orchestrator', 'info', 'Searching matching jobs from local MongoDB history...');
+        const historyJobs = await getAllJobHistory();
+        
+        // Filter history by query, location, and ctc
+        const filtered = historyJobs.filter(item => {
+          const titleMatch = item.job.title.toLowerCase().includes(jobQuery.toLowerCase()) || 
+                             item.job.company.toLowerCase().includes(jobQuery.toLowerCase()) ||
+                             jobQuery.toLowerCase().includes(item.job.title.toLowerCase());
+          
+          const locMatch = !location || 
+                           item.job.location.toLowerCase().includes(location.toLowerCase()) || 
+                           location.toLowerCase().includes(item.job.location.toLowerCase());
+
+          // Match expected CTC if present
+          let ctcMatch = true;
+          if (expectedCtc && item.job.description) {
+            const ctcClean = expectedCtc.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const descClean = item.job.description.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (ctcClean.length > 1 && !descClean.includes(ctcClean)) {
+              // we don't strictly reject to avoid missing entries, but prioritize
+            }
+          }
+          return titleMatch && locMatch && ctcMatch;
+        });
+
+        this.state.foundJobs = filtered.map(item => item.job);
+        this.state.matchingResults = filtered.map(item => item.matchResult).filter(Boolean) as MatchResult[];
+        
+        // Hydrate other loaded artifacts to state
+        filtered.forEach(item => {
+          if (item.tailoredResume) this.state.tailoredResumes[item.id] = item.tailoredResume;
+          if (item.coverLetter) this.state.coverLetters[item.id] = item.coverLetter;
+          if (item.interviewPrep) this.state.interviewPrep[item.id] = item.interviewPrep;
+        });
+
+        this.state.status = 'completed';
+        this.addLog('Orchestrator', 'success', `Loaded ${filtered.length} matched jobs from offline MongoDB history.`);
+        return;
+      }
+
+      // 1. Generate Smart Query Keywords via LLM
+      const smartSearchTerms = await this.queryGeneratorAgent.run(
+        resumeText, 
+        jobQuery, 
+        location, 
+        expectedCtc, 
+        (log) => {
+          this.state.logs.push(log);
+          this.logListeners.forEach(cb => cb(log));
+          this.notifyState();
+        }
+      );
+
+      // 2. Crawl Jobs using smart keywords
+      const jobs = await this.jobSearchAgent.run(smartSearchTerms, location, (log) => {
         this.state.logs.push(log);
         this.logListeners.forEach(cb => cb(log));
         this.notifyState();
@@ -113,7 +178,7 @@ export class AgentOrchestrator {
         return;
       }
 
-      // 2. Match Resumes
+      // 3. Match Resumes
       this.state.status = 'matching';
       this.addLog('Orchestrator', 'info', `Found ${jobs.length} jobs. Handing off to ResumeAnalyzerAgent to match against resume...`);
 
@@ -133,6 +198,9 @@ export class AgentOrchestrator {
           }
         );
         matchResults.push(result);
+
+        // Save new matches into MongoDB history!
+        await saveJobHistory(job, result);
       }
 
       // Sort jobs by match score descending
@@ -186,6 +254,9 @@ export class AgentOrchestrator {
       this.state.tailoredResumes[jobId] = tailoringRes.tailoredResume;
       this.state.coverLetters[jobId] = tailoringRes.coverLetter;
 
+      // Save to MongoDB database history
+      await updateJobTailoring(jobId, tailoringRes.tailoredResume, tailoringRes.coverLetter);
+
       // 2. Run Interview Prep Coach
       this.state.status = 'preparing';
       this.notifyState();
@@ -206,6 +277,9 @@ export class AgentOrchestrator {
       );
 
       this.state.interviewPrep[jobId] = prepRes;
+
+      // Save to MongoDB database history
+      await updateJobInterviewPrep(jobId, prepRes);
 
       this.state.status = 'completed';
       this.addLog('Orchestrator', 'success', `Resume tailoring, cover letter generation, and interview prep guides completed for ${job.company}!`);

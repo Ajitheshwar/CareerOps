@@ -1,0 +1,54 @@
+<div 
+  class="glass-card console-container fade-in" 
+  [class.expanded]="isExpanded()" 
+  [class.maximized]="isMaximized()"
+  [title]="!isExpanded() ? 'Agent Command Console' : ''"
+  (click)="!isExpanded() ? toggleExpand($event) : null"
+>
+  @if (!isExpanded()) {
+    <div class="console-minimized-trigger">
+      <span class="terminal-icon">📟</span>
+      <span class="status-dot" [ngClass]="agentService.status()"></span>
+    </div>
+  } @else {
+    <div class="console-header" (click)="toggleExpand($event)">
+      <div class="header-left">
+        <span class="status-dot" [ngClass]="agentService.status()"></span>
+        <h3>Agent Command Console</h3>
+        <span class="expand-indicator">▼</span>
+      </div>
+      <div class="header-actions">
+        <select (change)="setFilter($event)" class="filter-select" (click)="$event.stopPropagation()">
+          <option value="ALL">All Agents</option>
+          <option value="Orchestrator">Orchestrator</option>
+          <option value="JobSearch">Job Searcher</option>
+          <option value="ResumeAnalyzer">Resume Analyzer</option>
+          <option value="Tailoring">Resume Tailor</option>
+          <option value="InterviewPrep">Interview Coach</option>
+        </select>
+        <button (click)="clearLogs(); $event.stopPropagation()" class="btn-clear">Clear</button>
+        <button (click)="toggleMaximize($event); $event.stopPropagation()" class="btn-clear btn-maximize">
+          {{ isMaximized() ? '🗗 Restore' : '🗖 Maximize' }}
+        </button>
+        <button (click)="toggleExpand($event); $event.stopPropagation()" class="btn-close-console" title="Minimize Console">×</button>
+      </div>
+    </div>
+
+    <div class="console-body" #consoleBody>
+      @if (latestLogs().length === 0) {
+        <div class="empty-logs">
+          <span class="prompt-symbol">></span> Awaiting command execution...
+        </div>
+      } @else {
+        @for (log of latestLogs(); track log.id) {
+          <div class="log-line" [ngClass]="log.level">
+            <span class="log-time">{{ formatTime(log.timestamp) }}</span>
+            <span class="log-agent" [ngClass]="log.agent">{{ log.agent }}</span>
+            <span class="log-level-badge" [ngClass]="log.level">{{ log.level }}</span>
+            <span class="log-message">{{ log.message }}</span>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

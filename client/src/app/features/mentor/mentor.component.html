@@ -1,0 +1,61 @@
+<div class="chat-wrapper fade-in">
+  <div class="chat-header">
+    <h2>Career Mentor Advisor</h2>
+    <p>Strategic career guidance, skill gap analysis, and tailored engineering roadmaps.</p>
+  </div>
+
+  <div class="glass-card chat-card">
+    <!-- Chat history container -->
+    <div class="messages-container" #scrollContainer>
+      @if (messages().length === 0) {
+        <div class="empty-chat">
+          <div class="bot-avatar">🤖</div>
+          <h4>Welcome to CareerOps Mentor Chat</h4>
+          <p>Ask anything about target job requirements, engineering project suggestions, skill gap alignment, or interview advice. I will retrieve context dynamically from your uploaded resume and tracking history.</p>
+          <div class="suggested-prompts">
+            <button (click)="sendPrompt('What skill gaps do I have for my target role?')">🔍 Check my skill gaps</button>
+            <button (click)="sendPrompt('Suggest an engineering project to strengthen my resume')">💡 Suggest resume projects</button>
+            <button (click)="sendPrompt('Help me draft a cold email introduction for my applications')">✉️ Draft cold outreach</button>
+          </div>
+        </div>
+      } @else {
+        @for (msg of messages(); track msg.timestamp) {
+          <div class="message-row" [ngClass]="{ 'user': msg.role === 'user', 'bot': msg.role === 'assistant' }">
+            <div class="avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
+            <div class="bubble">
+              <span class="sender-name">{{ msg.role === 'user' ? 'You' : 'Career Mentor' }}</span>
+              <div class="message-content" [innerHTML]="formatMessage(msg.content)"></div>
+              <span class="timestamp">{{ msg.timestamp | date:'shortTime' }}</span>
+            </div>
+          </div>
+        }
+      }
+
+      @if (isGenerating()) {
+        <div class="message-row bot thought">
+          <div class="avatar">⚙️</div>
+          <div class="bubble thinking">
+            <span class="sender-name">Mentor is researching...</span>
+            <div class="thinking-loader">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Chat input container -->
+    <div class="input-container">
+      <input 
+        type="text" 
+        [(ngModel)]="userInput" 
+        (keyup.enter)="sendMessage()" 
+        placeholder="Ask your mentor a question..." 
+        [disabled]="isGenerating()"
+      />
+      <button (click)="sendMessage()" [disabled]="!userInput.trim() || isGenerating()" class="btn btn-primary">
+        Send
+      </button>
+    </div>
+  </div>
+</div>

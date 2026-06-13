@@ -1,0 +1,97 @@
+<div class="tracker-wrapper fade-in">
+  <div class="tracker-header">
+    <h2>Job Application Pipeline</h2>
+    <p>Track your applications, interview schedules, and offers. Moves jobs between statuses to update context for your mentor.</p>
+  </div>
+
+  <!-- Add manual job listing form -->
+  <div class="glass-card add-job-card">
+    <h4 (click)="toggleAddForm()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span>➕ Add Custom Job Opportunity</span>
+      <span>{{ showForm() ? '▲' : '▼' }}</span>
+    </h4>
+
+    @if (showForm()) {
+      <form (ngSubmit)="onAddJob()" class="add-job-form fade-in">
+        <div class="row">
+          <div class="form-group col">
+            <label class="form-label" for="jobTitle">Job Title</label>
+            <input type="text" id="jobTitle" class="form-input" [(ngModel)]="newJob.title" name="title" required placeholder="e.g. Lead Angular Engineer" />
+          </div>
+          <div class="form-group col">
+            <label class="form-label" for="company">Company</label>
+            <input type="text" id="company" class="form-input" [(ngModel)]="newJob.company" name="company" required placeholder="e.g. TechCorp" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="form-group col">
+            <label class="form-label" for="location">Location</label>
+            <input type="text" id="location" class="form-input" [(ngModel)]="newJob.location" name="location" placeholder="e.g. Remote, IN" />
+          </div>
+          <div class="form-group col">
+            <label class="form-label" for="url">Job URL</label>
+            <input type="text" id="url" class="form-input" [(ngModel)]="newJob.url" name="url" placeholder="e.g. https://linkedin.com/jobs/..." />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Job Description</label>
+          <textarea id="description" class="form-input" [(ngModel)]="newJob.description" name="description" rows="4" placeholder="Paste description or requirements here..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="!newJob.title || !newJob.company">Add to Tracker</button>
+        </div>
+      </form>
+    }
+  </div>
+
+  @if (jobs().length === 0) {
+    <app-empty-state 
+      title="No jobs in pipeline yet" 
+      message="Search and match jobs first, or click 'Add Custom Job Opportunity' above to manually track a role." 
+      icon="job"
+    ></app-empty-state>
+  } @else {
+    <!-- Pipeline Columns -->
+    <div class="pipeline-grid">
+      <!-- Columns loop -->
+      @for (col of columns; track col.status) {
+        <div class="pipeline-col">
+          <div class="col-header">
+            <span class="col-indicator" [style.background-color]="col.color"></span>
+            <h4>{{ col.title }}</h4>
+            <span class="count-pill">{{ getJobsByStatus(col.status).length }}</span>
+          </div>
+
+          <div class="col-body">
+            @for (job of getJobsByStatus(col.status); track job.id) {
+              <div class="glass-card job-track-card fade-in">
+                <h5>{{ job.title }}</h5>
+                <span class="company">{{ job.company }}</span>
+                <div class="meta">📍 {{ job.location }}</div>
+                
+                @if (job.url) {
+                  <a [href]="job.url" target="_blank" class="job-link">🔗 View Job</a>
+                }
+
+                <div class="card-controls">
+                  <select (change)="onStatusChange(job.id, $event)" class="status-select">
+                    <option [selected]="job.status === 'scraped'" value="scraped">Scraped</option>
+                    <option [selected]="job.status === 'applied'" value="applied">Applied</option>
+                    <option [selected]="job.status === 'interviewing'" value="interviewing">Interviewing</option>
+                    <option [selected]="job.status === 'rejected'" value="rejected">Rejected</option>
+                    <option [selected]="job.status === 'accepted'" value="accepted">Accepted</option>
+                  </select>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-column-state">No jobs</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

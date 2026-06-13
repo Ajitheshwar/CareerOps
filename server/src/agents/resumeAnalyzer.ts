@@ -50,16 +50,8 @@ Analyze the resume and return the matching matrix JSON.`;
         jobId
       };
     } catch (err: any) {
-      this.log(logCallback, 'warn', `AI analysis failed: ${err.message}. Generating fallback match parameters.`);
-      // Return a basic fallback match result
-      return {
-        jobId,
-        matchScore: 75,
-        fitExplanation: `AI analysis timed out. The fallback matching engine evaluated your profile as a moderate fit (75%) for ${jobTitle}.`,
-        matchingSkills: ['TypeScript', 'JavaScript', 'CSS'],
-        skillGaps: ['Framework-Specific Architectures'],
-        experienceRelevance: 'Your background matches general software development positions.'
-      };
+      this.log(logCallback, 'warn', `AI analysis failed: ${err.message}`);
+      throw err;
     }
   }
 

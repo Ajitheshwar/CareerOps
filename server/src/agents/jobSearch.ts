@@ -97,6 +97,7 @@ async function searchViaGoogleCustomSearch(
     log('success', `Google Custom Search returned ${jobs.length} valid results.`);
     return jobs;
   } catch (err: any) {
+    console.log(err)
     const details = err.response?.data?.error?.message || err.message;
     log('warn', `Google Custom Search API call failed: ${details}.`);
     return [];

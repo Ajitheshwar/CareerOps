@@ -84,32 +84,8 @@ Analyze their history, pick out relevant bullet points, refine their summary, wr
         coverLetter: result.coverLetter
       };
     } catch (err: any) {
-      this.log(logCallback, 'warn', `Tailoring failed: ${err.message}. Generating mock responses.`);
-      
-      // Fallback to LLM Service mock generation manually or custom templates
-      const mockSummary = 'Dynamic software developer specializing in high-performance application architectures and interactive modern user experiences.';
-      const mockBullets = [
-        {
-          original: 'Developed client facing interfaces and worked on backend tasks.',
-          tailored: `Engineered high-performance standalone modules for the core dashboard, optimizing user interactions and streamlining API communications for ${company}.`,
-          rationale: 'Highlights modularity and performance, matching the core objectives of this position.'
-        }
-      ];
-      
-      const mockCoverLetter = await this.llm.generateText(
-        `Generate a cover letter for ${jobTitle} at ${company}`, 
-        'Write a cover letter.'
-      );
-
-      return {
-        tailoredResume: {
-          jobId,
-          originalSummary: 'Software Developer.',
-          tailoredSummary: mockSummary,
-          bulletPointChanges: mockBullets
-        },
-        coverLetter: mockCoverLetter
-      };
+      this.log(logCallback, 'warn', `Tailoring failed: ${err.message}`);
+      throw err;
     }
   }
 
