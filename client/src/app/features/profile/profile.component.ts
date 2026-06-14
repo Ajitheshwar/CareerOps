@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../services/agent.service';
+import { SAMPLE_RESUME_TEXT, SAMPLE_JOB_QUERY, SAMPLE_LOCATION, SAMPLE_EXPECTED_CTC } from './sample-data';
+
 
 @Component({
   selector: 'app-user-profile',
@@ -13,6 +15,7 @@ import { AgentService } from '../../services/agent.service';
 })
 export class UserProfileComponent {
   agentService = inject(AgentService);
+  cdr = inject(ChangeDetectorRef);
 
   jobQuery = '';
   location = '';
@@ -21,6 +24,7 @@ export class UserProfileComponent {
   useHistory = false;
 
   uploadStatus = signal<string>('');
+  latestFileMetadata: any = null;
 
   async onFileSelected(event: any) {
     const file = event.target.files[0];
@@ -28,15 +32,24 @@ export class UserProfileComponent {
 
     this.uploadStatus.set('Uploading...');
     try {
-      const parsedText = await this.agentService.uploadResume(file);
-      this.resumeText = parsedText;
+      const { text, fileMetadata } = await this.agentService.uploadResume(file);
+      this.resumeText = text;
+      this.latestFileMetadata = fileMetadata;
       this.uploadStatus.set('Success!');
-      setTimeout(() => this.uploadStatus.set(''), 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.uploadStatus.set('');
+        this.cdr.markForCheck();
+      }, 3000);
     } catch (err: any) {
       console.error(err);
       this.uploadStatus.set('Failed');
+      this.cdr.markForCheck();
       alert(`Upload failed: ${err.message}`);
-      setTimeout(() => this.uploadStatus.set(''), 3000);
+      setTimeout(() => {
+        this.uploadStatus.set('');
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 
@@ -57,43 +70,18 @@ export class UserProfileComponent {
         if (!this.location && profile.location) this.location = profile.location;
         if (!this.expectedCtc && profile.expectedCtc) this.expectedCtc = profile.expectedCtc;
         if (this.useHistory === false && profile.useHistory !== undefined) this.useHistory = profile.useHistory;
+        this.cdr.markForCheck();
       }
     });
   }
 
+
   loadSampleResume() {
-    this.resumeText = `AJITHESHWAR VADLA
-Fullstack Engineer | TypeScript Developer
-ajitheshwar1923@gmail.com | Hyderabad, India
-
-PROFESSIONAL SUMMARY
-Highly motivated software developer with 2+ years of professional experience specializing in TypeScript, JavaScript, and building clean, responsive user interfaces. Skilled in frontend architectures, responsive design, and backend RESTful API development.
-
-TECHNICAL SKILLS
-- Languages: TypeScript, JavaScript, HTML5, CSS3, SQL
-- Frontend: Angular (v16+), React, Tailwind CSS, Responsive Design, CSS Grids/Flexbox
-- Backend: Node.js, Express, REST APIs, PostgreSQL
-- Tools: Git, GitHub, VS Code, npm, Docker
-
-PROFESSIONAL EXPERIENCE
-Software Engineer | TechOps Solutions (2024 - Present)
-- Developed and maintained multiple responsive client-facing web portals, improving interface loading performance by 20%.
-- Integrated complex backend REST API endpoints with the frontend, ensuring proper typesafe interface agreements.
-- Refactored legacy UI components into clean, reusable modular designs, reducing codebase duplication.
-- Collaborated in an Agile development environment to ship features on strict bi-weekly schedules.
-
-Junior Web Developer | InnovateTech Labs (2022 - 2024)
-- Built interactive frontend components and stylesheets using HTML, CSS, and modern framework principles.
-- Managed database queries and handled JSON requests on Node/Express servers.
-- Identified and resolved UI rendering and responsive layout bugs, improving cross-browser usability.
-
-EDUCATION
-Bachelor of Technology in Computer Science
-Graduated: 2022`;
-    
-    if (!this.jobQuery) this.jobQuery = 'Angular Developer';
-    if (!this.location) this.location = 'Hyderabad, India';
-    if (!this.expectedCtc) this.expectedCtc = '12 LPA';
+    this.resumeText = SAMPLE_RESUME_TEXT;
+    if (!this.jobQuery) this.jobQuery = SAMPLE_JOB_QUERY;
+    if (!this.location) this.location = SAMPLE_LOCATION;
+    if (!this.expectedCtc) this.expectedCtc = SAMPLE_EXPECTED_CTC;
+    this.cdr.markForCheck();
   }
 
   resetForm() {
@@ -102,11 +90,20 @@ Graduated: 2022`;
     this.resumeText = '';
     this.expectedCtc = '';
     this.useHistory = false;
+    this.latestFileMetadata = null;
     this.agentService.reset();
   }
 
   onSubmit() {
     if (!this.resumeText || !this.jobQuery) return;
-    this.agentService.startSearch(this.resumeText, this.jobQuery, this.location || 'Remote', this.expectedCtc, this.useHistory);
+    this.agentService.startSearch(
+      this.resumeText,
+      this.jobQuery,
+      this.location || 'Remote',
+      this.expectedCtc,
+      this.useHistory,
+      this.latestFileMetadata
+    );
+    this.latestFileMetadata = null;
   }
 }

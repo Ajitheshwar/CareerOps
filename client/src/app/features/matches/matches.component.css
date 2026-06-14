@@ -11,100 +11,6 @@
   margin-bottom: 4px;
 }
 
-.filter-tabs-container {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 8px;
-  background: rgba(15, 23, 42, 0.4);
-  padding: 6px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  width: fit-content;
-}
-
-.filter-tab {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--text-muted);
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  font-family: var(--font-main);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: var(--transition-smooth);
-}
-
-.filter-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.filter-tab.active {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.filter-tab.linkedin-tab.active {
-  background: rgba(14, 118, 168, 0.15);
-  border-color: rgba(14, 118, 168, 0.3);
-  color: #38bdf8;
-}
-
-.filter-tab.naukri-tab.active {
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.25);
-  color: #fb7185;
-}
-
-.count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-muted);
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  transition: var(--transition-smooth);
-}
-
-.filter-tab.active .count-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.filter-tab.linkedin-tab.active .count-badge {
-  background: rgba(14, 118, 168, 0.3);
-  color: #38bdf8;
-}
-
-.filter-tab.naukri-tab.active .count-badge {
-  background: rgba(244, 63, 94, 0.2);
-  color: #fb7185;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 48px !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.empty-icon {
-  font-size: 3rem;
-}
-.empty-state h4 {
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
 .matches-grid {
   display: flex;
   flex-direction: column;
@@ -150,6 +56,41 @@
   border-radius: 4px;
   border: 1px solid rgba(168, 85, 247, 0.25);
 }
+
+.job-title-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.job-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-size: 0.85rem;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.job-link-icon:hover {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: var(--accent-cyan);
+  transform: scale(1.05);
+}
+
+.job-card:hover .job-link-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .job-info h3 {
   font-size: 1.15rem;
   color: #fff;
@@ -169,30 +110,6 @@
   font-size: 0.8rem;
   color: var(--text-muted);
 }
-
-/* Progress score ring */
-.progress-svg {
-  transform: rotate(-90deg);
-}
-.circle-bg {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.03);
-  stroke-width: 4px;
-}
-.circle-fg {
-  fill: none;
-  stroke-width: 4px;
-  stroke-linecap: round;
-  stroke-dasharray: 163.36; /* 2 * pi * r (r=26) */
-  transition: stroke-dashoffset 0.5s ease;
-}
-.circle-fg.green { stroke: var(--accent-green); }
-.circle-fg.cyan { stroke: var(--accent-cyan); }
-.circle-fg.warn { stroke: var(--accent-rose); }
-
-.progress-ring-text.green { color: var(--accent-green); }
-.progress-ring-text.cyan { color: var(--accent-cyan); }
-.progress-ring-text.warn { color: var(--accent-rose); }
 
 /* Expanded Details */
 .expanded-details {
@@ -257,3 +174,89 @@
   justify-content: flex-end;
   margin-top: 8px;
 }
+
+.matches-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.sort-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.sort-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-main);
+  white-space: nowrap;
+}
+
+.sort-select {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  outline: none;
+  padding-right: 4px;
+}
+
+.sort-select option {
+  background: #0f172a;
+  color: #fff;
+}
+
+.card-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-delete-job {
+  background: rgba(244, 63, 94, 0.05);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  color: rgba(244, 63, 94, 0.6);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  outline: none;
+}
+
+.btn-delete-job:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #fb7185;
+  transform: scale(1.08);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
+}
+
+.btn-delete-job:active {
+  transform: scale(0.95);
+}
+
+.delete-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+

@@ -11,33 +11,31 @@
       icon="job"
     ></app-empty-state>
   } @else {
-    <!-- Source Filter Tabs -->
-    <div class="filter-tabs-container">
-      <button 
-        class="filter-tab" 
-        [class.active]="activeFilter() === 'all'" 
-        (click)="setFilter('all')"
-      >
-        <span class="tab-icon">🌐</span> All Jobs
-        <span class="count-badge">{{ totalCount() }}</span>
-      </button>
-      <button 
-        class="filter-tab linkedin-tab" 
-        [class.active]="activeFilter() === 'linkedin'" 
-        (click)="setFilter('linkedin')"
-      >
-        <span class="tab-icon">💼</span> LinkedIn
-        <span class="count-badge">{{ linkedinCount() }}</span>
-      </button>
-      <button 
-        class="filter-tab naukri-tab" 
-        [class.active]="activeFilter() === 'naukri'" 
-        (click)="setFilter('naukri')"
-      >
-        <span class="tab-icon">🎯</span> Naukri
-        <span class="count-badge">{{ naukriCount() }}</span>
-      </button>
+    <div class="matches-controls">
+      <!-- Source Filter Tabs Component -->
+      <app-filter-tabs
+        [activeFilter]="activeFilter()"
+        [totalCount]="totalCount()"
+        [linkedinCount]="linkedinCount()"
+        [naukriCount]="naukriCount()"
+        (filterChange)="setFilter($event)"
+      ></app-filter-tabs>
+
+      <!-- Sort Selection -->
+      <div class="sort-container">
+        <label for="sortBySelect" class="sort-label">Sort By:</label>
+        <select 
+          id="sortBySelect" 
+          class="sort-select" 
+          [value]="sortBy()"
+          (change)="onSortChange($event)"
+        >
+          <option value="matchingScore">Matching Score</option>
+          <option value="date">Date Crawled</option>
+        </select>
+      </div>
     </div>
+
 
     @if (filteredJobs().length === 0) {
       <app-empty-state 
@@ -57,7 +55,14 @@
             <div class="card-top">
               <div class="job-info">
                 <span class="source-badge">{{ job.source }}</span>
-                <h3>{{ job.title }}</h3>
+                <h3 class="job-title-wrapper">
+                  {{ job.title }}
+                  @if (job.url) {
+                    <a [href]="job.url" target="_blank" class="job-link-icon" (click)="$event.stopPropagation()" title="Open job posting">
+                      <span class="link-symbol">↗</span>
+                    </a>
+                  }
+                </h3>
                 <p class="company-name">{{ job.company }}</p>
                 <div class="job-meta">
                   <span class="meta-item">📍 {{ job.location }}</span>
@@ -67,24 +72,18 @@
                 </div>
               </div>
 
-              @if (match) {
-                <div class="progress-ring-container">
-                  <svg width="64" height="64" class="progress-svg">
-                    <circle class="circle-bg" cx="32" cy="32" r="26" />
-                    <circle 
-                      class="circle-fg" 
-                      [ngClass]="getScoreColorClass(match.matchScore)"
-                      cx="32" 
-                      cy="32" 
-                      r="26" 
-                      [style.strokeDashoffset]="calculateOffset(match.matchScore)"
-                    />
-                  </svg>
-                  <span class="progress-ring-text" [ngClass]="getScoreColorClass(match.matchScore)">
-                    {{ match.matchScore }}%
-                  </span>
-                </div>
-              }
+              <div class="card-right-controls" (click)="$event.stopPropagation()">
+                @if (match) {
+                  <app-score-ring
+                    [score]="match.matchScore"
+                    [isAnalyzing]="analyzingJobIds()[job.id] || false"
+                    (reRun)="onReRunAnalysis($event, job.id)"
+                  ></app-score-ring>
+                }
+                <button class="btn-delete-job" (click)="onDeleteJob($event, job.id)" title="Hide & Exclude Job">
+                  <span class="delete-icon">🗑</span>
+                </button>
+              </div>
             </div>
 
             <!-- Expanded Details Section -->
@@ -126,14 +125,7 @@
                   <p class="detail-text">{{ match.experienceRelevance }}</p>
                 </div>
 
-                <div class="card-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                  @if (job.url) {
-                    <a [href]="job.url" target="_blank" class="btn btn-secondary" style="text-decoration: none; font-size: 0.85rem;" (click)="$event.stopPropagation()">
-                      🔗 Open on {{ job.source }}
-                    </a>
-                  } @else {
-                    <div></div>
-                  }
+                <div class="card-actions" style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
                   <button 
                     class="btn btn-primary"
                     (click)="onTailor(job.id); $event.stopPropagation()"

@@ -1,0 +1,77 @@
+.filter-tabs-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  width: fit-content;
+}
+
+.filter-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: var(--font-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition-smooth);
+}
+
+.filter-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.filter-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.filter-tab.linkedin-tab.active {
+  background: rgba(14, 118, 168, 0.15);
+  border-color: rgba(14, 118, 168, 0.3);
+  color: #38bdf8;
+}
+
+.filter-tab.naukri-tab.active {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.25);
+  color: #fb7185;
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.filter-tab.active .count-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.filter-tab.linkedin-tab.active .count-badge {
+  background: rgba(14, 118, 168, 0.3);
+  color: #38bdf8;
+}
+
+.filter-tab.naukri-tab.active .count-badge {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+}

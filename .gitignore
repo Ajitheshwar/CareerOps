@@ -20,3 +20,6 @@ client/dist/
 # OS files
 Thumbs.db
 .DS_Store
+
+# Temporary uploads
+workspace/resumes/temp/

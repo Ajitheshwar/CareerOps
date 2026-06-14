@@ -1,0 +1,69 @@
+.progress-ring-container {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-svg {
+  transform: rotate(-90deg);
+}
+
+.circle-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.03);
+  stroke-width: 4px;
+}
+
+.circle-fg {
+  fill: none;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-dasharray: 163.36; /* 2 * pi * r (r=26) */
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.circle-fg.green { stroke: var(--accent-green); }
+.circle-fg.cyan { stroke: var(--accent-cyan); }
+.circle-fg.warn { stroke: var(--accent-rose); }
+.circle-fg.gray { stroke: #4b5563; }
+
+.progress-ring-text {
+  position: absolute;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-main);
+}
+
+.progress-ring-text.green { color: var(--accent-green); }
+.progress-ring-text.cyan { color: var(--accent-cyan); }
+.progress-ring-text.warn { color: var(--accent-rose); }
+.progress-ring-text.gray { color: #9ca3af; }
+
+.btn-rerun {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #e5e7eb;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-main);
+  outline: none;
+}
+
+.btn-rerun:hover:not(:disabled) {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.15);
+}
+
+.btn-rerun:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

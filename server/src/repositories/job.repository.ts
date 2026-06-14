@@ -176,10 +176,71 @@ export class JobRepository {
   static async getAllJobHistory(): Promise<HistoricalJob[]> {
     try {
       const col = await getCollection<HistoricalJob>('jobs_history');
-      return await col.find({}).sort({ updatedAt: -1 }).toArray();
+      return await col.find({ isDeleted: { $ne: true } }).sort({ updatedAt: -1 }).toArray();
     } catch (err) {
       console.error('Failed to retrieve job history list from DB:', err);
       return [];
     }
   }
+
+  static async getDeletedJobHistory(): Promise<HistoricalJob[]> {
+    try {
+      const col = await getCollection<HistoricalJob>('jobs_history');
+      return await col.find({ isDeleted: true }).toArray();
+    } catch (err) {
+      console.error('Failed to retrieve deleted job history list from DB:', err);
+      return [];
+    }
+  }
+
+  static async getJobHistoryById(id: string): Promise<HistoricalJob | null> {
+    try {
+      const col = await getCollection<HistoricalJob>('jobs_history');
+      return await col.findOne({ id });
+    } catch (err) {
+      console.error(`Failed to get job history by ID ${id}:`, err);
+      return null;
+    }
+  }
+
+  static async softDeleteJob(id: string): Promise<void> {
+    try {
+      const historyCol = await getCollection<HistoricalJob>('jobs_history');
+      const listingsCol = await getCollection<JobListing>('job_listings');
+
+      await historyCol.updateOne({ id }, { $set: { isDeleted: true, updatedAt: new Date() } });
+      await listingsCol.updateOne({ id }, { $set: { isDeleted: true, updatedAt: new Date() } });
+      console.log(`JobRepository: Soft deleted job ${id}`);
+    } catch (err) {
+      console.error(`Failed to soft delete job ${id}:`, err);
+      throw err;
+    }
+  }
+
+  static async cleanupOldScrapedJobs(): Promise<void> {
+    try {
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+      const jobListingsCol = await getCollection<JobListing>('job_listings');
+      const jobsHistoryCol = await getCollection<HistoricalJob>('jobs_history');
+
+      const oldScrapedListings = await jobListingsCol.find({
+        status: 'scraped',
+        createdAt: { $lt: threeMonthsAgo }
+      }).toArray();
+
+      if (oldScrapedListings.length === 0) return;
+
+      const idsToDelete = oldScrapedListings.map(j => j.id);
+      console.log(`JobRepository: Cleaning up ${idsToDelete.length} scraped jobs older than 3 months...`);
+
+      await jobListingsCol.deleteMany({ id: { $in: idsToDelete } });
+      await jobsHistoryCol.deleteMany({ id: { $in: idsToDelete } });
+    } catch (err) {
+      console.error('Failed to cleanup old scraped jobs:', err);
+    }
+  }
 }
+
+

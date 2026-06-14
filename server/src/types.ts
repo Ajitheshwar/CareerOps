@@ -7,16 +7,19 @@ export interface Job {
   description: string;
   url?: string;
   source: string;
+  date?: string; // ISO string representing when the job was crawled/added
 }
+
 
 export interface MatchResult {
   jobId: string;
-  matchScore: number; // 0 to 100
+  matchScore: number | null; // 0 to 100 or null if not available
   fitExplanation: string;
   matchingSkills: string[];
   skillGaps: string[];
   experienceRelevance: string;
 }
+
 
 export interface BulletChange {
   original: string;

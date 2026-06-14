@@ -4,7 +4,12 @@ import { Job, AgentLog, LogLevel } from '../types';
 
 export interface BaseScraper {
   name: string;
-  search(query: string, location: string, logCallback: (log: AgentLog) => void): Promise<Job[]>;
+  search(
+    query: string,
+    location: string,
+    logCallback: (log: AgentLog) => void,
+    excludedPhrases?: string[]
+  ): Promise<Job[]>;
 }
 
 const USER_AGENTS = [
@@ -23,7 +28,8 @@ async function searchViaSerpApi(
   query: string,
   location: string,
   siteTarget: string,
-  log: (level: LogLevel, msg: string) => void
+  log: (level: LogLevel, msg: string) => void,
+  excludedPhrases?: string[]
 ): Promise<Job[]> {
   const apiKey = process.env.SERPAPI_API_KEY;
 
@@ -34,7 +40,21 @@ async function searchViaSerpApi(
 
   log('thought', `SerpApi credentials found. Querying Google Search via SerpApi...`);
   // Use a cleaner dork query format for better compatibility
-  const dork = `site:${siteTarget} "${query}" "${location}"`;
+  let dork = `site:${siteTarget} "${query}" "${location}"`;
+
+  if (excludedPhrases && excludedPhrases.length > 0) {
+    // Slice to first 8 to stay well within Google's 32-word query limit
+    const activeExclusions = excludedPhrases.slice(0, 8);
+    const exclusionString = activeExclusions.map(phrase => {
+      let cleaned = phrase.trim();
+      if (!cleaned.startsWith('"') && !cleaned.startsWith('-')) {
+        cleaned = `"${cleaned}"`;
+      }
+      return ` -${cleaned}`;
+    }).join('');
+    dork += exclusionString;
+    log('info', `Applying exclusions: ${exclusionString}`);
+  }
 
   try {
     const response = await axios.get('https://serpapi.com/search.json', {
@@ -43,7 +63,8 @@ async function searchViaSerpApi(
         q: dork,
         api_key: apiKey,
         hl: 'en',
-        gl: 'in' // Target India results
+        gl: 'in', // Target India results
+        tbs: 'qdr:w' // Restrict to past week
       },
       timeout: 10000
     });
@@ -106,7 +127,12 @@ async function searchViaSerpApi(
 export class LinkedInScraper implements BaseScraper {
   name = 'LinkedIn India';
 
-  async search(query: string, location: string, logCallback: (log: AgentLog) => void): Promise<Job[]> {
+  async search(
+    query: string,
+    location: string,
+    logCallback: (log: AgentLog) => void,
+    excludedPhrases?: string[]
+  ): Promise<Job[]> {
     const log = (level: LogLevel, msg: string) => logCallback({
       id: Math.random().toString(36).substring(7),
       timestamp: new Date().toISOString(),
@@ -115,20 +141,34 @@ export class LinkedInScraper implements BaseScraper {
       message: `[LinkedIn Crawler] ${msg}`
     });
 
-    const siteTarget = 'in.linkedin.com/jobs/view/';
+    const siteTarget = 'linkedin.com/jobs/view/';
 
     // Tier 1: Try SerpApi Google Search
     if (process.env.SERPAPI_API_KEY) {
-      const serpJobs = await searchViaSerpApi(query, location, siteTarget, log);
+      const serpJobs = await searchViaSerpApi(query, location, siteTarget, log, excludedPhrases);
       if (serpJobs.length > 0) return serpJobs;
     }
 
     // Tier 2: Organic fallback if SerpApi key missing or returned 0 results
     log('thought', `No SerpApi credentials or search returned 0 results. Falling back to organic scraper...`);
     // Fall back using the domain without the path for better DDG compatibility
-    const cleanSite = 'in.linkedin.com';
-    const dork = `site:${cleanSite} "jobs/view" "${query}" "${location}"`;
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(dork)}`;
+    const cleanSite = 'linkedin.com';
+    let dork = `site:${cleanSite} "jobs/view" "${query}" "${location}"`;
+
+    if (excludedPhrases && excludedPhrases.length > 0) {
+      const activeExclusions = excludedPhrases.slice(0, 8);
+      const exclusionString = activeExclusions.map(phrase => {
+        let cleaned = phrase.trim();
+        if (!cleaned.startsWith('"') && !cleaned.startsWith('-')) {
+          cleaned = `"${cleaned}"`;
+        }
+        return ` -${cleaned}`;
+      }).join('');
+      dork += exclusionString;
+      log('info', `Applying organic exclusions: ${exclusionString}`);
+    }
+
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(dork)}&df=w`;
 
     try {
       const response = await axios.get(searchUrl, {
@@ -145,11 +185,22 @@ export class LinkedInScraper implements BaseScraper {
 
       $('.result').each((_, el) => {
         const titleLink = $(el).find('.result__title a.result__url');
-        const href = titleLink.attr('href') || '';
+        let href = titleLink.attr('href') || '';
+        
+        // Handle DuckDuckGo redirect encoding
+        try {
+          if (href.includes('uddg=')) {
+            const parts = href.split('uddg=');
+            if (parts[1]) {
+              href = decodeURIComponent(parts[1].split('&')[0]);
+            }
+          }
+        } catch (e) {}
+
         const titleText = titleLink.text().trim();
         const snippet = $(el).find('.result__snippet').text().trim();
 
-        if (href.includes('linkedin.com/jobs/view/')) {
+        if (href.includes('linkedin.com/jobs/view/') || href.includes('linkedin.com/jobs/')) {
           let parsedTitle = query;
           let parsedCompany = 'Unknown Company';
 
@@ -193,7 +244,12 @@ export class LinkedInScraper implements BaseScraper {
 export class NaukriScraper implements BaseScraper {
   name = 'Naukri';
 
-  async search(query: string, location: string, logCallback: (log: AgentLog) => void): Promise<Job[]> {
+  async search(
+    query: string,
+    location: string,
+    logCallback: (log: AgentLog) => void,
+    excludedPhrases?: string[]
+  ): Promise<Job[]> {
     const log = (level: LogLevel, msg: string) => logCallback({
       id: Math.random().toString(36).substring(7),
       timestamp: new Date().toISOString(),
@@ -206,15 +262,29 @@ export class NaukriScraper implements BaseScraper {
 
     // Tier 1: Try SerpApi Google Search
     if (process.env.SERPAPI_API_KEY) {
-      const serpJobs = await searchViaSerpApi(query, location, siteTarget, log);
+      const serpJobs = await searchViaSerpApi(query, location, siteTarget, log, excludedPhrases);
       if (serpJobs.length > 0) return serpJobs;
     }
 
     // Tier 2: Organic fallback if SerpApi key missing or returned 0 results
     log('thought', `No SerpApi credentials or search returned 0 results. Falling back to organic scraper...`);
     const cleanSite = 'naukri.com';
-    const dork = `site:${cleanSite} "job-listings" "${query}" "${location}"`;
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(dork)}`;
+    let dork = `site:${cleanSite} "job-listings" "${query}" "${location}"`;
+
+    if (excludedPhrases && excludedPhrases.length > 0) {
+      const activeExclusions = excludedPhrases.slice(0, 8);
+      const exclusionString = activeExclusions.map(phrase => {
+        let cleaned = phrase.trim();
+        if (!cleaned.startsWith('"') && !cleaned.startsWith('-')) {
+          cleaned = `"${cleaned}"`;
+        }
+        return ` -${cleaned}`;
+      }).join('');
+      dork += exclusionString;
+      log('info', `Applying organic exclusions: ${exclusionString}`);
+    }
+
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(dork)}&df=w`;
 
     try {
       const response = await axios.get(searchUrl, {
@@ -231,11 +301,22 @@ export class NaukriScraper implements BaseScraper {
 
       $('.result').each((_, el) => {
         const titleLink = $(el).find('.result__title a.result__url');
-        const href = titleLink.attr('href') || '';
+        let href = titleLink.attr('href') || '';
+        
+        // Handle DuckDuckGo redirect encoding
+        try {
+          if (href.includes('uddg=')) {
+            const parts = href.split('uddg=');
+            if (parts[1]) {
+              href = decodeURIComponent(parts[1].split('&')[0]);
+            }
+          }
+        } catch (e) {}
+
         const titleText = titleLink.text().trim();
         const snippet = $(el).find('.result__snippet').text().trim();
 
-        if (href.includes('naukri.com/job-listings-')) {
+        if (href.includes('naukri.com/job-listings-') || href.includes('naukri.com/job/')) {
           const parts = titleText.split(/\s*-\s*/);
           let parsedTitle = parts[0]?.trim() || query;
           let parsedCompany = parts[1]?.trim() || 'Naukri Recruiter';
@@ -276,15 +357,20 @@ export class JobSearchAgent {
   async run(
     query: string,
     location: string,
-    logCallback: (log: AgentLog) => void
+    logCallback: (log: AgentLog) => void,
+    excludedPhrases?: string[]
   ): Promise<Job[]> {
     const finalLocation = location || 'India';
-    this.log(logCallback, 'thought', `Initializing JobSearchAgent (SerpApi enabled)... Targeting: "${query}" in "${finalLocation}"`);
+    this.log(
+      logCallback,
+      'thought',
+      `Initializing JobSearchAgent (SerpApi enabled)... Targeting: "${query}" in "${finalLocation}"`
+    );
 
     // Run scrapers concurrently
     const promises = this.scrapers.map(scraper => {
       this.log(logCallback, 'info', `Launching crawler for: ${scraper.name}...`);
-      return scraper.search(query, finalLocation, logCallback);
+      return scraper.search(query, finalLocation, logCallback, excludedPhrases);
     });
 
     const results = await Promise.all(promises);
@@ -303,12 +389,20 @@ export class JobSearchAgent {
     });
 
     if (crawledJobs.length > 0) {
-      this.log(logCallback, 'success', `Successfully retrieved ${crawledJobs.length} organic jobs from LinkedIn & Naukri.`);
+      this.log(
+        logCallback,
+        'success',
+        `Successfully retrieved ${crawledJobs.length} organic jobs from LinkedIn & Naukri.`
+      );
       return crawledJobs;
     }
 
     // STRICT REQUIREMENT: No mock fallback data allowed. Return empty results.
-    this.log(logCallback, 'warn', `No jobs found or scrapers rate-limited. Returning empty results as requested.`);
+    this.log(
+      logCallback,
+      'warn',
+      `No jobs found or scrapers rate-limited. Returning empty results as requested.`
+    );
     return [];
   }
 

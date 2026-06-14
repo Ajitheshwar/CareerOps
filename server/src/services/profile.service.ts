@@ -30,30 +30,19 @@ export class ProfileService {
     originalName: string,
     mimeType: string,
     size: number
-  ): Promise<{ text: string; filePath: string }> {
+  ): Promise<{ text: string; filePath: string; originalName: string; mimeType: string; size: number }> {
     // 1. Extract plain text from PDF/DOCX resume
     const extractedText = await ResumeParserService.parseFile(filePath);
-    console.log(extractedText);
-    // 2. Generate text embedding using Gemini/LLMService
-    const llm = new LLMService();
-    const embedding = await llm.embedText(extractedText);
+    
+    // Do NOT generate embedding or save user profile to database on upload.
+    // This will be done when the user triggers the job search / match analysis pipeline.
 
-    // 3. Save to user profile collection in MongoDB
-    await UserRepository.saveUserProfile({
-      resumeText: extractedText,
-      jobQuery: 'Developer',
-      location: 'Remote',
-      expectedCtc: '',
-      useHistory: false,
-      embedding,
-      metadata: {
-        originalName,
-        mimeType,
-        size,
-        path: filePath
-      }
-    });
-
-    return { text: extractedText, filePath };
+    return { 
+      text: extractedText, 
+      filePath, 
+      originalName, 
+      mimeType, 
+      size 
+    };
   }
 }

@@ -11,7 +11,9 @@ export interface HistoricalJob extends Document {
   interviewPrep?: InterviewPrepData;
   createdAt: Date;
   updatedAt: Date;
+  isDeleted?: boolean;
 }
+
 
 export interface JobListing extends Document {
   id: string; // unique ID
@@ -25,7 +27,9 @@ export interface JobListing extends Document {
   job_embedding?: number[];
   createdAt: Date;
   updatedAt: Date;
+  isDeleted?: boolean;
 }
+
 
 export interface GeneratedArtifact extends Document {
   id: string; // unique ID or jobId

@@ -63,8 +63,9 @@ export class ConsoleComponent {
   }
 
   clearLogs() {
-    this.agentService.reset();
+    this.agentService.clearLogs();
   }
+
 
   formatTime(isoString: string): string {
     try {

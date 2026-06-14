@@ -5,7 +5,7 @@ import { ResumeAnalyzerAgent } from './resumeAnalyzer';
 import { TailoringAgent } from './tailoring';
 import { InterviewPrepAgent } from './interviewPrep';
 import { QueryGeneratorAgent } from './queryGenerator';
-import { saveJobHistory, updateJobTailoring, updateJobInterviewPrep, getAllJobHistory } from '../db';
+import { saveJobHistory, updateJobTailoring, updateJobInterviewPrep, getAllJobHistory, getDeletedJobHistory } from '../db';
 
 export class AgentOrchestrator {
   private llm: LLMService;
@@ -61,6 +61,12 @@ export class AgentOrchestrator {
     this.notifyState();
   }
 
+  clearLogs() {
+    this.state.logs = [];
+    this.notifyState();
+  }
+
+
   registerListener(cb: (state: AgentState) => void) {
     this.listeners.push(cb);
   }
@@ -115,13 +121,30 @@ export class AgentOrchestrator {
         
         // Filter history by query, location, and ctc
         const filtered = historyJobs.filter(item => {
-          const titleMatch = item.job.title.toLowerCase().includes(jobQuery.toLowerCase()) || 
-                             item.job.company.toLowerCase().includes(jobQuery.toLowerCase()) ||
-                             jobQuery.toLowerCase().includes(item.job.title.toLowerCase());
+          const jobTitle = item.job.title.toLowerCase();
+          const queryLower = jobQuery.toLowerCase();
           
-          const locMatch = !location || 
-                           item.job.location.toLowerCase().includes(location.toLowerCase()) || 
-                           location.toLowerCase().includes(item.job.location.toLowerCase());
+          // 1. Flexible Title Match: Check for direct substring match or keyword overlaps
+          const queryWords = queryLower.split(/[\s,\-\/]+/).filter(w => w.length > 2);
+          const titleWords = jobTitle.split(/[\s,\-\/]+/).filter(w => w.length > 2);
+          
+          const hasKeywordOverlap = queryWords.some(qw => 
+            titleWords.some(tw => tw.includes(qw) || qw.includes(tw))
+          );
+          
+          const titleMatch = jobTitle.includes(queryLower) || 
+                             queryLower.includes(jobTitle) || 
+                             hasKeywordOverlap;
+          
+          // 2. Flexible Location Match: Match if query is empty, "remote", or contains matching keywords
+          const queryLocLower = (location || '').toLowerCase().trim();
+          const jobLocLower = item.job.location.toLowerCase();
+          
+          const locMatch = !queryLocLower || 
+                           queryLocLower === 'remote' || 
+                           jobLocLower.includes(queryLocLower) || 
+                           queryLocLower.includes(jobLocLower) ||
+                           queryLocLower.split(/[\s,]+/)[0] === jobLocLower.split(/[\s,]+/)[0];
 
           // Match expected CTC if present
           let ctcMatch = true;
@@ -135,7 +158,10 @@ export class AgentOrchestrator {
           return titleMatch && locMatch && ctcMatch;
         });
 
-        this.state.foundJobs = filtered.map(item => item.job);
+        this.state.foundJobs = filtered.map(item => ({
+          ...item.job,
+          date: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
+        }));
         this.state.matchingResults = filtered.map(item => item.matchResult).filter(Boolean) as MatchResult[];
         
         // Hydrate other loaded artifacts to state
@@ -150,6 +176,14 @@ export class AgentOrchestrator {
         return;
       }
 
+      // Fetch soft-deleted jobs from history to build negative search terms and filter
+      const deletedJobs = await getDeletedJobHistory().catch(err => {
+        this.addLog('Orchestrator', 'warn', `Failed to load deleted jobs from history: ${err.message}`);
+        return [];
+      });
+
+      const excludedPhrases = deletedJobs.map(dj => `"${dj.job.title} ${dj.job.company}"`);
+
       // 1. Generate Smart Query Keywords via LLM
       const smartSearchTerms = await this.queryGeneratorAgent.run(
         resumeText, 
@@ -163,12 +197,36 @@ export class AgentOrchestrator {
         }
       );
 
-      // 2. Crawl Jobs using smart keywords
-      const jobs = await this.jobSearchAgent.run(smartSearchTerms, location, (log) => {
-        this.state.logs.push(log);
-        this.logListeners.forEach(cb => cb(log));
-        this.notifyState();
-      });
+      // 2. Crawl Jobs using smart keywords (with negative exclusions)
+      const rawJobs = await this.jobSearchAgent.run(
+        smartSearchTerms, 
+        location, 
+        (log) => {
+          this.state.logs.push(log);
+          this.logListeners.forEach(cb => cb(log));
+          this.notifyState();
+        }, 
+        excludedPhrases
+      );
+
+      // Filter out any crawled jobs that match any soft-deleted job's title + company
+      const deletedKeySet = new Set(
+        deletedJobs.map(dj => `${dj.job.title.toLowerCase()}|${dj.job.company.toLowerCase()}`)
+      );
+
+      const jobs = rawJobs
+        .map(j => ({
+          ...j,
+          date: new Date().toISOString()
+        }))
+        .filter(j => {
+          const key = `${j.title.toLowerCase()}|${j.company.toLowerCase()}`;
+          const isExcluded = deletedKeySet.has(key);
+          if (isExcluded) {
+            this.addLog('Orchestrator', 'info', `Filtered out soft-deleted job: "${j.title}" at "${j.company}"`);
+          }
+          return !isExcluded;
+        });
 
       this.state.foundJobs = jobs;
       
@@ -178,33 +236,76 @@ export class AgentOrchestrator {
         return;
       }
 
-      // 3. Match Resumes
-      this.state.status = 'matching';
-      this.addLog('Orchestrator', 'info', `Found ${jobs.length} jobs. Handing off to ResumeAnalyzerAgent to match against resume...`);
-
-      const matchResults: MatchResult[] = [];
-      
+      // Store crawled jobs immediately in database
+      this.addLog('Orchestrator', 'info', `Storing ${jobs.length} crawled jobs to database...`);
       for (const job of jobs) {
-        const result = await this.resumeAnalyzer.run(
-          resumeText,
-          job.id,
-          job.title,
-          job.company,
-          job.description,
-          (log) => {
-            this.state.logs.push(log);
-            this.logListeners.forEach(cb => cb(log));
-            this.notifyState();
-          }
-        );
-        matchResults.push(result);
-
-        // Save new matches into MongoDB history!
-        await saveJobHistory(job, result);
+        try {
+          await saveJobHistory(job);
+        } catch (dbErr: any) {
+          console.error(`Failed to save initial job history for ${job.id}:`, dbErr);
+        }
       }
 
-      // Sort jobs by match score descending
-      matchResults.sort((a, b) => b.matchScore - a.matchScore);
+      // 3. Match Resumes
+      this.state.status = 'matching';
+      this.addLog('Orchestrator', 'info', `Handing off to ResumeAnalyzerAgent to match against resume...`);
+
+      const matchResults: MatchResult[] = [];
+      let failedCount = 0;
+      
+      for (const job of jobs) {
+        try {
+          const result = await this.resumeAnalyzer.run(
+            resumeText,
+            job.id,
+            job.title,
+            job.company,
+            job.description,
+            (log) => {
+              this.state.logs.push(log);
+              this.logListeners.forEach(cb => cb(log));
+              this.notifyState();
+            }
+          );
+          matchResults.push(result);
+
+          // Update matchResult in MongoDB
+          await saveJobHistory(job, result);
+        } catch (err: any) {
+          this.addLog('Orchestrator', 'warn', `Resume analysis failed for "${job.title}" at ${job.company}: ${err.message}`);
+          failedCount++;
+
+          const placeholderResult: MatchResult = {
+            jobId: job.id,
+            matchScore: null,
+            fitExplanation: 'Resume analysis failed. You can re-run analysis for this job.',
+            matchingSkills: [],
+            skillGaps: [],
+            experienceRelevance: 'Unknown'
+          };
+          matchResults.push(placeholderResult);
+
+          // Save placeholder result in DB
+          try {
+            await saveJobHistory(job, placeholderResult);
+          } catch (dbErr: any) {
+            console.error(`Failed to save placeholder job history for ${job.id}:`, dbErr);
+          }
+        }
+      }
+
+      if (failedCount > 0) {
+        console.error(`[Orchestrator Error] ${failedCount}/${jobs.length} jobs resume analysis failed`);
+        this.addLog('Orchestrator', 'warn', `${failedCount}/${jobs.length} jobs resume analysis failed.`);
+      }
+
+      // Sort jobs by match score descending, with null scores at the bottom
+      matchResults.sort((a, b) => {
+        if (a.matchScore === null && b.matchScore === null) return 0;
+        if (a.matchScore === null) return 1;
+        if (b.matchScore === null) return -1;
+        return b.matchScore - a.matchScore;
+      });
       this.state.matchingResults = matchResults;
       
       // Re-order foundJobs to align with sorted match results
@@ -212,7 +313,8 @@ export class AgentOrchestrator {
       this.state.foundJobs = matchResults.map(mr => jobMap.get(mr.jobId)!).filter(Boolean);
 
       this.state.status = 'completed';
-      this.addLog('Orchestrator', 'success', `Multi-agent search and matching analysis finished. Best match: ${matchResults[0]?.matchScore || 0}% at ${this.state.foundJobs[0]?.company || 'N/A'}.`);
+      const bestMatchScore = matchResults[0]?.matchScore !== null ? `${matchResults[0]?.matchScore}%` : 'N/A';
+      this.addLog('Orchestrator', 'success', `Multi-agent search and matching analysis finished. Best match: ${bestMatchScore} at ${this.state.foundJobs[0]?.company || 'N/A'}.`);
     } catch (err: any) {
       this.state.status = 'error';
       this.addLog('Orchestrator', 'warn', `Pipeline error: ${err.message}`);

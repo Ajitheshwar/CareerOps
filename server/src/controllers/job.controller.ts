@@ -45,4 +45,32 @@ export class JobController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  static async analyzeSingleJob(req: Request, res: Response) {
+    const { jobId, resumeText } = req.body;
+    if (!jobId) {
+      return res.status(400).json({ error: 'jobId is required.' });
+    }
+    try {
+      const result = await JobService.analyzeSingleJob(jobId, resumeText);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async deleteJob(req: Request, res: Response) {
+    const { jobId } = req.body;
+    if (!jobId) {
+      return res.status(400).json({ error: 'jobId is required.' });
+    }
+    try {
+      await JobService.deleteJob(jobId);
+      res.json({ success: true, message: 'Job soft deleted successfully.' });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
 }
+
+

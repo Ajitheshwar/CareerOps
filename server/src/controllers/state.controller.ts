@@ -43,9 +43,16 @@ export class StateController {
     res.json({ success: true, message: 'State reset successfully.' });
   }
 
+  static clearLogs(req: Request, res: Response) {
+    StateController.initializeOrchestrator();
+    StateService.clearLogs();
+    res.json({ success: true, message: 'Logs cleared successfully.' });
+  }
+
+
   static async triggerSearch(req: Request, res: Response) {
     StateController.initializeOrchestrator();
-    const { resumeText, jobQuery, location, expectedCtc, useHistory } = req.body;
+    const { resumeText, jobQuery, location, expectedCtc, useHistory, fileMetadata } = req.body;
     
     if (!resumeText || !jobQuery) {
       return res.status(400).json({ error: 'resumeText and jobQuery are required.' });
@@ -56,7 +63,8 @@ export class StateController {
       jobQuery,
       location || 'Remote',
       expectedCtc || '',
-      !!useHistory
+      !!useHistory,
+      fileMetadata
     );
 
     res.json({ success: true, message: 'Job search and matching pipeline started.' });

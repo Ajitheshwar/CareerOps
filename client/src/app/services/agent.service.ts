@@ -138,7 +138,7 @@ export class AgentService {
   /**
    * Trigger the multi-agent search and matching analysis
    */
-  async startSearch(resumeText: string, jobQuery: string, location: string, expectedCtc: string, useHistory: boolean) {
+  async startSearch(resumeText: string, jobQuery: string, location: string, expectedCtc: string, useHistory: boolean, fileMetadata?: any) {
     // Optimistically connect stream if disconnected
     this.connectStream();
 
@@ -146,7 +146,7 @@ export class AgentService {
       const res = await fetch(`${API_BASE}/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeText, jobQuery, location, expectedCtc, useHistory })
+        body: JSON.stringify({ resumeText, jobQuery, location, expectedCtc, useHistory, fileMetadata })
       });
 
       if (!res.ok) {
@@ -192,6 +192,107 @@ export class AgentService {
   }
 
   /**
+   * Re-run resume analyzer for a single job
+   */
+  async reAnalyzeJob(jobId: string, resumeText?: string): Promise<MatchResult> {
+    try {
+      const res = await fetch(`${API_BASE}/jobs/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, resumeText })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to re-run job analysis.');
+      }
+
+      const matchResult: MatchResult = await res.json();
+
+      // Update stateSignal locally
+      this.stateSignal.update(curr => {
+        const matchIndex = curr.matchingResults.findIndex(m => m.jobId === jobId);
+        let updatedMatches = [...curr.matchingResults];
+        if (matchIndex > -1) {
+          updatedMatches[matchIndex] = matchResult;
+        } else {
+          updatedMatches.push(matchResult);
+        }
+
+        // Sort by match score descending, with null scores at the bottom
+        updatedMatches.sort((a, b) => {
+          if (a.matchScore === null && b.matchScore === null) return 0;
+          if (a.matchScore === null) return 1;
+          if (b.matchScore === null) return -1;
+          return b.matchScore - a.matchScore;
+        });
+
+        // Reorder foundJobs to match
+        const jobMap = new Map(curr.foundJobs.map(j => [j.id, j]));
+        const updatedJobs = updatedMatches.map(mr => jobMap.get(mr.jobId)!).filter(Boolean);
+
+        return {
+          ...curr,
+          matchingResults: updatedMatches,
+          foundJobs: updatedJobs
+        };
+      });
+
+      // Reload tracker jobs to fetch new requirements
+      await this.loadTrackerJobs();
+
+      return matchResult;
+    } catch (err: any) {
+      console.error('Failed to re-run job analysis:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Soft delete a job posting
+   */
+  async deleteJob(jobId: string) {
+    // Optimistically update the state
+    this.stateSignal.update(curr => {
+      const foundJobs = curr.foundJobs.filter(j => j.id !== jobId);
+      const matchingResults = curr.matchingResults.filter(m => m.jobId !== jobId);
+      const logs = [
+        ...curr.logs,
+        {
+          id: Math.random().toString(36).substring(7),
+          timestamp: new Date().toISOString(),
+          agent: 'Orchestrator' as any,
+          level: 'success' as any,
+          message: `Locally soft-deleted job with ID "${jobId}"`
+        }
+      ];
+      return {
+        ...curr,
+        foundJobs,
+        matchingResults,
+        logs
+      };
+    });
+
+    try {
+      const res = await fetch(`${API_BASE}/jobs/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to delete job on server.');
+      }
+    } catch (err: any) {
+      console.error('Failed to delete job on backend, reloading state:', err);
+      // Fetch latest state if request failed to rollback optimistic update
+      await this.fetchState();
+    }
+  }
+
+  /**
    * Reset the orchestrator state
    */
   async reset() {
@@ -205,6 +306,24 @@ export class AgentService {
     }
   }
 
+  /**
+   * Clear the logs without resetting the entire search state
+   */
+  async clearLogs() {
+    try {
+      const res = await fetch(`${API_BASE}/clear-logs`, { method: 'POST' });
+      if (res.ok) {
+        this.stateSignal.update(curr => ({
+          ...curr,
+          logs: []
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to clear logs:', err);
+    }
+  }
+
+
   // New Career Intelligence Signals
   public mentorMessages = signal<{ role: 'user' | 'assistant'; content: string; timestamp: Date }[]>([]);
   public trackerJobs = signal<JobListing[]>([]);
@@ -213,7 +332,7 @@ export class AgentService {
   /**
    * Upload resume file (PDF or DOCX) to backend
    */
-  async uploadResume(file: File): Promise<string> {
+  async uploadResume(file: File): Promise<{ text: string; fileMetadata: any }> {
     const formData = new FormData();
     formData.append('resume', file);
 
@@ -229,7 +348,7 @@ export class AgentService {
 
     const data = await res.json();
     await this.fetchState();
-    return data.text;
+    return { text: data.text, fileMetadata: data.fileMetadata };
   }
 
   /**

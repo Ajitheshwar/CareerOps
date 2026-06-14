@@ -1,0 +1,26 @@
+<div class="filter-tabs-container">
+  <button 
+    class="filter-tab" 
+    [class.active]="activeFilter === 'all'" 
+    (click)="selectFilter('all')"
+  >
+    <span class="tab-icon">🌐</span> All Jobs
+    <span class="count-badge">{{ totalCount }}</span>
+  </button>
+  <button 
+    class="filter-tab linkedin-tab" 
+    [class.active]="activeFilter === 'linkedin'" 
+    (click)="selectFilter('linkedin')"
+  >
+    <span class="tab-icon">💼</span> LinkedIn
+    <span class="count-badge">{{ linkedinCount }}</span>
+  </button>
+  <button 
+    class="filter-tab naukri-tab" 
+    [class.active]="activeFilter === 'naukri'" 
+    (click)="selectFilter('naukri')"
+  >
+    <span class="tab-icon">🎯</span> Naukri
+    <span class="count-badge">{{ naukriCount }}</span>
+  </button>
+</div>

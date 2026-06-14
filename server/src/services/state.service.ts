@@ -2,6 +2,9 @@
 import { AgentOrchestrator } from '../agents/orchestrator';
 import { UserRepository } from '../repositories/user.repository';
 import { AgentState, AgentLog } from '../types';
+import { LLMService } from '../llm';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class StateService {
   private static orchestrator = new AgentOrchestrator();
@@ -51,6 +54,12 @@ export class StateService {
     this.orchestrator.resetState();
   }
 
+  static clearLogs(): void {
+    this.initialize();
+    this.orchestrator.clearLogs();
+  }
+
+
   static onStateUpdate(cb: (state: AgentState) => void) {
     this.initialize();
     this.stateListeners.push(cb);
@@ -66,18 +75,82 @@ export class StateService {
     jobQuery: string,
     location: string,
     expectedCtc: string,
-    useHistory: boolean
+    useHistory: boolean,
+    fileMetadata?: {
+      tempFilePath: string;
+      originalName: string;
+      mimeType: string;
+      size: number;
+    }
   ): Promise<void> {
     this.initialize();
 
-    // Save profile to database in background
-    UserRepository.saveUserProfile({
-      resumeText,
-      jobQuery,
-      location: location || 'Remote',
-      expectedCtc: expectedCtc || '',
-      useHistory: !!useHistory
-    }).catch((err) => console.error('Failed to save profile during search:', err));
+    let savedMetadata: any = undefined;
+
+    // Move the temp resume to permanent storage if metadata is provided
+    if (fileMetadata && fileMetadata.tempFilePath) {
+      try {
+        const targetFilename = `${Date.now()}-${fileMetadata.originalName}`;
+        const targetPath = path.join(__dirname, '../../../workspace/resumes', targetFilename);
+        
+        // Ensure directory exists
+        const targetDir = path.dirname(targetPath);
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        // Copy temp file to permanent location
+        if (fs.existsSync(fileMetadata.tempFilePath)) {
+          fs.copyFileSync(fileMetadata.tempFilePath, targetPath);
+          console.log(`StateService: Saved resume permanently to ${targetPath}`);
+          
+          savedMetadata = {
+            originalName: fileMetadata.originalName,
+            mimeType: fileMetadata.mimeType,
+            size: fileMetadata.size,
+            path: targetPath
+          };
+        }
+
+        // Delete ALL files in the temp directory
+        const tempDir = path.dirname(fileMetadata.tempFilePath);
+        if (fs.existsSync(tempDir)) {
+          const files = fs.readdirSync(tempDir);
+          for (const file of files) {
+            const filePath = path.join(tempDir, file);
+            if (fs.lstatSync(filePath).isFile()) {
+              fs.unlinkSync(filePath);
+            }
+          }
+          console.log('StateService: Cleared all files from temp directory.');
+        }
+      } catch (err) {
+        console.error('Failed to process temp resume storage/cleanup:', err);
+      }
+    }
+
+    // Save profile and generate embedding in background
+    const saveProfileWithEmbedding = async () => {
+      try {
+        const llm = new LLMService();
+        const embedding = await llm.embedText(resumeText);
+        
+        await UserRepository.saveUserProfile({
+          resumeText,
+          jobQuery: jobQuery || 'Developer',
+          location: location || 'Remote',
+          expectedCtc: expectedCtc || '',
+          useHistory: !!useHistory,
+          embedding,
+          metadata: savedMetadata
+        });
+        console.log('StateService: Saved user profile and embedding successfully.');
+      } catch (err) {
+        console.error('Failed to generate embedding or save profile during search:', err);
+      }
+    };
+
+    saveProfileWithEmbedding();
 
     // Run search pipeline in background
     this.orchestrator

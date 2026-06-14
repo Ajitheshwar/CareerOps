@@ -45,7 +45,12 @@ export class ProfileController {
         success: true,
         message: 'Resume parsed and uploaded successfully.',
         text: result.text,
-        filePath: result.filePath
+        fileMetadata: {
+          tempFilePath: result.filePath,
+          originalName: result.originalName,
+          mimeType: result.mimeType,
+          size: result.size
+        }
       });
     } catch (err: any) {
       console.error('Failed to parse and upload resume:', err);

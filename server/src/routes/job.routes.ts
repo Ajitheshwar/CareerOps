@@ -9,7 +9,11 @@ const router = Router();
 router.get('/jobs', JobController.getJobs);
 router.post('/jobs', validateBody(['title', 'company']), JobController.createJob);
 router.post('/jobs/status', validateBody(['id', 'status']), JobController.updateStatus);
+router.post('/jobs/analyze', validateBody(['jobId']), JobController.analyzeSingleJob);
+router.post('/jobs/delete', validateBody(['jobId']), JobController.deleteJob);
 router.post('/search', validateBody(['resumeText', 'jobQuery']), StateController.triggerSearch);
+
+
 router.post('/tailor', validateBody(['jobId']), StateController.triggerTailor);
 
 export default router;

@@ -26,11 +26,14 @@ export class QueryGeneratorAgent {
     log('thought', `Analyzing resume skills & target job: "${jobQuery}" to generate optimized dork keywords...`);
 
     const systemPrompt = `You are an expert recruitment coordinator. 
-Given a candidate's resume and their target role, your job is to extract 2 or 3 essential, highly-distinct technical keywords or synonyms that fit their exact experience level and primary tech stack.
+Given a candidate's resume and their target role, your job is to generate 2-3 generic search keywords (such as standard job titles or roles, e.g., "Frontend Developer" or "Frontend Engineer") that are commonly used on job boards to advertise these types of roles.
+IMPORTANT:
+- Generate common, generic job titles/terms (e.g. "Frontend Developer", "Frontend Engineer", "Web Developer") rather than low-level technical libraries or skills (do NOT use specific tools/libraries like "Angular", "RxJS", "React", "NGXS", "Redux", etc., as search keywords, as this excessively restricts the search results).
+- The terms should match how companies name their job postings, aligned with the candidate's target job title and experience level (e.g. including "Senior" if they are highly experienced).
 Return a valid JSON object matching this schema:
 {
-  "searchKeywords": "string containing 2-3 key technical terms separated by spaces, do not include site: or dork operators, just raw keywords",
-  "explanation": "brief sentence explaining the chosen search terms based on experience level"
+  "searchKeywords": "string containing 2-3 key search terms separated by spaces, do not include site: or dork operators, just raw keywords",
+  "explanation": "brief sentence explaining the chosen search terms based on target role and experience level"
 }`;
 
     const prompt = `Candidate Resume:
@@ -40,7 +43,7 @@ Target Job Title: "${jobQuery}"
 Target Location: "${location}"
 Expected CTC: "${expectedCtc}"
 
-Please generate the search terms. Do not include location in the searchKeywords (we append location separately). Make sure the terms align with the candidate's actual level of experience (junior vs mid vs senior) and tech stack.`;
+Please generate the generic job title search terms. Do not include location in the searchKeywords (we append location separately). Make sure the terms align with the candidate's actual level of experience (junior vs mid vs senior).`;
 
     try {
       interface QueryOutput {

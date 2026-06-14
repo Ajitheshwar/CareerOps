@@ -54,8 +54,15 @@ export async function connectDB(): Promise<Db> {
   await client.connect();
   db = client.db();
   console.log('MongoDB: Connected successfully to database:', db.databaseName);
+
+  // Clean up scraped jobs older than 3 months on server startup
+  JobRepository.cleanupOldScrapedJobs().catch(err => {
+    console.error('Failed to run startup scraped job cleanup:', err);
+  });
+
   return db;
 }
+
 
 export async function getCollection<T extends Document>(name: string): Promise<Collection<T>> {
   const database = await connectDB();
@@ -118,4 +125,18 @@ export async function updateJobInterviewPrep(jobId: string, interviewPrep: any) 
 export async function getAllJobHistory() {
   return JobRepository.getAllJobHistory();
 }
+
+export async function getJobHistoryById(id: string) {
+  return JobRepository.getJobHistoryById(id);
+}
+
+export async function softDeleteJob(id: string) {
+  return JobRepository.softDeleteJob(id);
+}
+
+export async function getDeletedJobHistory() {
+  return JobRepository.getDeletedJobHistory();
+}
+
+
 

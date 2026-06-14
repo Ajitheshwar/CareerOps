@@ -7,16 +7,19 @@ export interface Job {
   description: string;
   url?: string;
   source: string;
+  date?: string;
 }
+
 
 export interface MatchResult {
   jobId: string;
-  matchScore: number;
+  matchScore: number | null;
   fitExplanation: string;
   matchingSkills: string[];
   skillGaps: string[];
   experienceRelevance: string;
 }
+
 
 export interface BulletChange {
   original: string;
