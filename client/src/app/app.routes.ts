@@ -47,6 +47,11 @@ export const routes: Routes = [
         path: 'analytics',
         loadComponent: () => import('./features/analytics/analytics.component').then(m => m.InterviewAnalyticsComponent),
         title: 'Interview Analytics | TalentGraph AI'
+      },
+      {
+        path: 'jobs/:id',
+        loadComponent: () => import('./features/job-details/job-details.component').then(m => m.JobDetailsComponent),
+        title: 'Job Details | TalentGraph AI'
       }
     ]
   },

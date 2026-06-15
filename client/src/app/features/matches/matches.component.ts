@@ -1,21 +1,39 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AgentService } from '../../services/agent.service';
-import { Job, MatchResult } from '../../types';
+import { Job, MatchResult, JobListing } from '../../types';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { FilterTabsComponent } from '../../shared/components/filter-tabs/filter-tabs.component';
 import { ScoreRingComponent } from '../../shared/components/score-ring/score-ring.component';
+import { MatchEvaluationComponent } from '../../shared/components/match-evaluation/match-evaluation.component';
+import { StatusSelectorComponent } from '../../shared/components/status-selector/status-selector.component';
 
 @Component({
   selector: 'app-job-matches',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent, FilterTabsComponent, ScoreRingComponent],
+  imports: [CommonModule, EmptyStateComponent, FilterTabsComponent, ScoreRingComponent, MatchEvaluationComponent, StatusSelectorComponent],
   templateUrl: './matches.component.html',
   styleUrls: ['./matches.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class JobMatchesComponent {
+export class JobMatchesComponent implements OnInit {
   agentService = inject(AgentService);
+  router = inject(Router);
+
+  ngOnInit() {
+    this.agentService.loadTrackerJobs();
+  }
+
+  getJobStatus(jobId: string): JobListing['status'] {
+    const trackerJob = this.agentService.trackerJobs().find(j => j.id === jobId);
+    return trackerJob?.status || 'scraped';
+  }
+
+  async onStatusChange(jobId: string, status: JobListing['status']) {
+    await this.agentService.updateJobStatus(jobId, status);
+  }
+
 
   jobs = this.agentService.jobs;
   matches = this.agentService.matches;
@@ -26,6 +44,12 @@ export class JobMatchesComponent {
   totalCount = computed(() => this.jobs().length);
   linkedinCount = computed(() => this.jobs().filter(j => (j.source || '').toLowerCase().includes('linkedin')).length);
   naukriCount = computed(() => this.jobs().filter(j => (j.source || '').toLowerCase().includes('naukri')).length);
+
+  filterTabs = computed(() => [
+    { id: 'all', label: 'All Jobs', icon: '🌐', count: this.totalCount() },
+    { id: 'linkedin', label: 'LinkedIn', icon: '💼', count: this.linkedinCount(), customClass: 'linkedin-tab' },
+    { id: 'naukri', label: 'Naukri', icon: '🎯', count: this.naukriCount(), customClass: 'naukri-tab' }
+  ]);
 
   sortBy = signal<'matchingScore' | 'date'>('matchingScore');
 
@@ -69,8 +93,8 @@ export class JobMatchesComponent {
     return jobsList;
   });
 
-  setFilter(filter: 'all' | 'linkedin' | 'naukri') {
-    this.activeFilter.set(filter);
+  setFilter(filter: string) {
+    this.activeFilter.set(filter as 'all' | 'linkedin' | 'naukri');
     this.expandedJobId.set(null);
   }
 
@@ -117,6 +141,35 @@ export class JobMatchesComponent {
 
   onTailor(jobId: string) {
     this.agentService.startTailoring(jobId);
+  }
+
+  onPrep(jobId: string) {
+    this.agentService.startInterviewPrep(jobId);
+  }
+
+  hasTailored(jobId: string): boolean {
+    const state = this.agentService.state();
+    return !!state.tailoredResumes[jobId] || !!state.coverLetters[jobId];
+  }
+
+  hasInterviewPrep(jobId: string): boolean {
+    const state = this.agentService.state();
+    return !!state.interviewPrep[jobId];
+  }
+
+  viewTailor(jobId: string) {
+    this.agentService.selectJob(jobId);
+    this.router.navigate(['/tailor']);
+  }
+
+  viewCoach(jobId: string) {
+    this.agentService.selectJob(jobId);
+    this.router.navigate(['/coach']);
+  }
+
+  viewJobDetails(jobId: string) {
+    this.agentService.selectJob(jobId);
+    this.router.navigate(['/jobs', jobId]);
   }
 
   async onDeleteJob(event: Event, jobId: string) {

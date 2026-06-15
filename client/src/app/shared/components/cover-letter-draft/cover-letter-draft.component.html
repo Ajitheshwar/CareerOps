@@ -1,0 +1,9 @@
+<div class="glass-card letter-card" *ngIf="coverLetter">
+  <div class="letter-header">
+    <h4>Persuasive Cover Letter Draft</h4>
+    <button (click)="copyCoverLetter()" class="btn btn-secondary btn-sm">
+      {{ copyButtonText() }}
+    </button>
+  </div>
+  <pre class="letter-pre">{{ coverLetter }}</pre>
+</div>

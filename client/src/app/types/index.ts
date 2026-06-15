@@ -107,3 +107,15 @@ export interface GeneratedArtifact {
   createdAt: Date;
 }
 
+export interface HistoricalJob {
+  id: string;
+  job: Job;
+  matchResult?: MatchResult;
+  tailoredResume?: TailoredResume;
+  coverLetter?: string;
+  interviewPrep?: InterviewPrepData;
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+

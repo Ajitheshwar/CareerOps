@@ -1,0 +1,38 @@
+<div class="match-eval-wrapper" *ngIf="match">
+  <!-- Fit Evaluation Section -->
+  <div class="eval-section">
+    <h5 class="eval-title">Fit Evaluation</h5>
+    <p class="eval-text">{{ match.fitExplanation }}</p>
+  </div>
+
+  <!-- Skills Comparison Section -->
+  <div class="skills-grid">
+    <div class="skills-box green-theme">
+      <h5 class="skills-title">Matching Strengths</h5>
+      <div class="skills-badges">
+        @for (skill of match.matchingSkills; track skill) {
+          <span class="badge badge-green">{{ skill }}</span>
+        } @empty {
+          <span class="no-items">No matching skills detected.</span>
+        }
+      </div>
+    </div>
+
+    <div class="skills-box rose-theme">
+      <h5 class="skills-title">Target Gaps & Missing Skills</h5>
+      <div class="skills-badges">
+        @for (gap of match.skillGaps; track gap) {
+          <span class="badge badge-rose">{{ gap }}</span>
+        } @empty {
+          <span class="no-items">No critical gaps! Great fit.</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Career Relevancy Section -->
+  <div class="eval-section mt-16">
+    <h5 class="eval-title">Career Relevancy</h5>
+    <p class="eval-text">{{ match.experienceRelevance }}</p>
+  </div>
+</div>

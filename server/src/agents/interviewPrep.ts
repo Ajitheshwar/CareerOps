@@ -50,7 +50,7 @@ Analyze the requirements, compare with the candidate's history, identify potenti
 
     try {
       this.log(logCallback, 'thought', `Sending interview prep prompt to LLM...`);
-      const result = await this.llm.generateJSON<Omit<InterviewPrepData, 'jobId'>>(prompt, systemPrompt);
+      const result = await this.llm.generateJSON<Omit<InterviewPrepData, 'jobId'>>(prompt, systemPrompt, 'high');
       
       this.log(logCallback, 'success', `Interview prep materials created for ${company}. Generated ${result.questions?.length || 0} questions.`);
 

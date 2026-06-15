@@ -169,7 +169,16 @@ export class StateService {
 
     // Run tailoring pipeline in background
     this.orchestrator
-      .runTailoringAndPrep(jobId)
+      .runTailoring(jobId)
       .catch((err) => console.error('Error in tailoring pipeline:', err));
+  }
+
+  static async triggerPrepInterview(jobId: string): Promise<void> {
+    this.initialize();
+
+    // Run interview prep pipeline in background
+    this.orchestrator
+      .runInterviewPrep(jobId)
+      .catch((err) => console.error('Error in interview prep pipeline:', err));
   }
 }

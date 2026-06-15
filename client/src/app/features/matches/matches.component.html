@@ -14,11 +14,9 @@
     <div class="matches-controls">
       <!-- Source Filter Tabs Component -->
       <app-filter-tabs
-        [activeFilter]="activeFilter()"
-        [totalCount]="totalCount()"
-        [linkedinCount]="linkedinCount()"
-        [naukriCount]="naukriCount()"
-        (filterChange)="setFilter($event)"
+        [tabs]="filterTabs()"
+        [activeTabId]="activeFilter()"
+        (tabChange)="setFilter($event)"
       ></app-filter-tabs>
 
       <!-- Sort Selection -->
@@ -55,7 +53,7 @@
             <div class="card-top">
               <div class="job-info">
                 <span class="source-badge">{{ job.source }}</span>
-                <h3 class="job-title-wrapper">
+                <h3 class="job-title-wrapper clickable-title" (click)="viewJobDetails(job.id); $event.stopPropagation()" style="cursor: pointer;">
                   {{ job.title }}
                   @if (job.url) {
                     <a [href]="job.url" target="_blank" class="job-link-icon" (click)="$event.stopPropagation()" title="Open job posting">
@@ -73,13 +71,11 @@
               </div>
 
               <div class="card-right-controls" (click)="$event.stopPropagation()">
-                @if (match) {
                   <app-score-ring
-                    [score]="match.matchScore"
+                    [score]="match?.matchScore ?? null"
                     [isAnalyzing]="analyzingJobIds()[job.id] || false"
                     (reRun)="onReRunAnalysis($event, job.id)"
                   ></app-score-ring>
-                }
                 <button class="btn-delete-job" (click)="onDeleteJob($event, job.id)" title="Hide & Exclude Job">
                   <span class="delete-icon">🗑</span>
                 </button>
@@ -90,55 +86,60 @@
             @if (expandedJobId() === job.id && match) {
               <div class="expanded-details fade-in" (click)="$event.stopPropagation()">
                 <div class="details-divider"></div>
-                
-                <div class="section-block">
-                  <h5>Fit Evaluation</h5>
-                  <p class="detail-text">{{ match.fitExplanation }}</p>
+                <!-- Pipeline Status Section -->
+
+                <div class="status-container" style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                  <span class="status-label" style="font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.6);">Pipeline Status:</span>
+                  <app-status-selector
+                    [status]="getJobStatus(job.id)"
+                    (statusChange)="onStatusChange(job.id, $event)"
+                  ></app-status-selector>
                 </div>
 
-                <div class="row-skills">
-                  <div class="skills-col">
-                    <h5>Matching Strengths</h5>
-                    <div class="skills-list">
-                      @for (skill of match.matchingSkills; track skill) {
-                        <span class="badge badge-green">{{ skill }}</span>
-                      } @empty {
-                        <span class="no-skills">None matched</span>
-                      }
-                    </div>
-                  </div>
+                <app-match-evaluation [match]="match"></app-match-evaluation>
 
-                  <div class="skills-col">
-                    <h5>Target Skill Gaps</h5>
-                    <div class="skills-list">
-                      @for (gap of match.skillGaps; track gap) {
-                        <span class="badge badge-rose">{{ gap }}</span>
-                      } @empty {
-                        <span class="no-skills">No critical gaps!</span>
-                      }
-                    </div>
-                  </div>
-                </div>
 
-                <div class="section-block">
-                  <h5>Career Relevancy</h5>
-                  <p class="detail-text">{{ match.experienceRelevance }}</p>
-                </div>
-
-                <div class="card-actions" style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                <div class="card-actions" style="display: flex; gap: 12px; justify-content: flex-end; align-items: center; width: 100%;">
                   <button 
-                    class="btn btn-primary"
-                    (click)="onTailor(job.id); $event.stopPropagation()"
-                    [disabled]="agentService.status() === 'tailoring' || agentService.status() === 'preparing'"
+                    class="btn btn-secondary"
+                    (click)="viewJobDetails(job.id); $event.stopPropagation()"
                   >
-                    @if (agentService.status() === 'tailoring' && isSelected(job.id)) {
-                      <span>Tailoring Resume...</span>
-                    } @else if (agentService.status() === 'preparing' && isSelected(job.id)) {
-                      <span>Coaching Prep...</span>
-                    } @else {
-                      <span>Tailor Materials & Prep Interview</span>
-                    }
+                    View Job Dashboard
                   </button>
+
+                  @if (!hasTailored(job.id)) {
+                    <button 
+                      class="btn btn-primary"
+                      (click)="onTailor(job.id); $event.stopPropagation()"
+                      [disabled]="agentService.status() === 'tailoring'"
+                    >
+                      @if (agentService.status() === 'tailoring' && isSelected(job.id)) {
+                        <span>Tailoring Resume...</span>
+                      } @else {
+                        <span>Tailor Resume & Cover Letter</span>
+                      }
+                    </button>
+                  } @else if (!hasInterviewPrep(job.id)) {
+                    <button 
+                      class="btn btn-primary"
+                      (click)="onPrep(job.id); $event.stopPropagation()"
+                      [disabled]="agentService.status() === 'preparing'"
+                    >
+                      @if (agentService.status() === 'preparing' && isSelected(job.id)) {
+                        <span>Generating Coach...</span>
+                      } @else {
+                        <span>Generate Interview Prep Guide</span>
+                      }
+                    </button>
+                  } @else {
+                    <button 
+                      class="btn btn-purple"
+                      (click)="viewJobDetails(job.id); $event.stopPropagation()"
+                      style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; border: none;"
+                    >
+                      Start Practice Coach
+                    </button>
+                  }
                 </div>
               </div>
             }

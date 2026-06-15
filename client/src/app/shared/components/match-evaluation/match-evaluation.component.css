@@ -1,0 +1,93 @@
+.match-eval-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.eval-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eval-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.eval-text {
+  font-size: 0.925rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skills-box {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 14px 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skills-box.green-theme {
+  border-left: 3px solid var(--accent-green);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.02), transparent);
+}
+
+.skills-box.rose-theme {
+  border-left: 3px solid var(--accent-rose);
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.02), transparent);
+}
+
+.skills-title {
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.green-theme .skills-title {
+  color: var(--accent-green);
+}
+
+.rose-theme .skills-title {
+  color: var(--accent-rose);
+}
+
+.skills-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.no-items {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}

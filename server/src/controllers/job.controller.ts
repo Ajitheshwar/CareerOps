@@ -12,6 +12,19 @@ export class JobController {
     }
   }
 
+  static async getJobHistoryById(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+      const historicalJob = await JobService.getJobHistoryById(id);
+      if (!historicalJob) {
+        return res.status(404).json({ error: 'Job not found in history.' });
+      }
+      res.json(historicalJob);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   static async createJob(req: Request, res: Response) {
     const { title, company, description, location, requirements, url, status, id } = req.body;
 

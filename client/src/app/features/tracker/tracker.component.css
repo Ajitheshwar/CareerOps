@@ -128,17 +128,8 @@
   margin-top: 4px;
   display: flex;
 }
-.status-select {
-  width: 100%;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  color: var(--text-main);
-  padding: 4px 6px;
-  font-size: 0.75rem;
-  outline: none;
-  cursor: pointer;
-}
+/* .status-select is obsolete and replaced by app-status-selector */
+
 
 .empty-column-state {
   text-align: center;

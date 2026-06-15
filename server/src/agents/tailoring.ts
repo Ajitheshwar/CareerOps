@@ -61,7 +61,7 @@ Analyze their history, pick out relevant bullet points, refine their summary, wr
         coverLetter: string;
       }
       
-      const result = await this.llm.generateJSON<LLMTailorOutput>(prompt, systemPrompt);
+      const result = await this.llm.generateJSON<LLMTailorOutput>(prompt, systemPrompt, 'high');
       
       this.log(logCallback, 'success', `Successfully generated tailored materials for ${company}.`);
 

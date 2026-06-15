@@ -80,7 +80,20 @@ export class StateController {
 
     await StateService.triggerTailor(jobId);
 
-    res.json({ success: true, message: 'Tailoring and interview preparation pipeline started.' });
+    res.json({ success: true, message: 'Resume tailoring pipeline started.' });
+  }
+
+  static async triggerPrepInterview(req: Request, res: Response) {
+    StateController.initializeOrchestrator();
+    const { jobId } = req.body;
+
+    if (!jobId) {
+      return res.status(400).json({ error: 'jobId is required.' });
+    }
+
+    await StateService.triggerPrepInterview(jobId);
+
+    res.json({ success: true, message: 'Interview preparation pipeline started.' });
   }
 
   static stream(req: Request, res: Response) {

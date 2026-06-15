@@ -323,3 +323,63 @@ p {
   font-weight: 700;
   color: #fff;
 }
+
+/* Pipeline Status Styles */
+.status-badge-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 14px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.status-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.status-select-dropdown {
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.status-select-dropdown:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.status-select-compact {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.status-select-compact:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+
+.status-scraped { background-color: rgba(107, 114, 128, 0.2) !important; color: #9ca3af !important; }
+.status-applied { background-color: rgba(59, 130, 246, 0.2) !important; color: #60a5fa !important; }
+.status-interviewing { background-color: rgba(234, 179, 8, 0.2) !important; color: #fef08a !important; }
+.status-accepted { background-color: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; }
+.status-rejected { background-color: rgba(239, 68, 68, 0.2) !important; color: #fca5a5 !important; }
+

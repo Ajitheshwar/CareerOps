@@ -7,9 +7,15 @@ dotenv.config();
 
 const JSON_PROMPT_SUFFIX = '\nIMPORTANT: You must return a valid JSON object. Do not include markdown code block syntax (like ```json ... ```).';
 
-const FALLBACK_MODELS = [
+const HIGH_PRIORITY_MODELS = [
   'gemini-3.5-flash',
   'gemini-2.5-flash',
+  'gemini-3-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash-lite'
+];
+
+const LOW_PRIORITY_MODELS = [
   'gemini-3.1-flash-lite',
   'gemini-2.5-flash-lite',
   'gemini-3-flash'
@@ -61,13 +67,17 @@ export class LLMService {
   /**
    * Generates a text response from the active LLM (Gemini or OpenAI).
    */
-  async generateText(prompt: string, systemPrompt: string): Promise<string> {
+  async generateText(
+    prompt: string,
+    systemPrompt: string,
+    priority: 'high' | 'low' = 'low'
+  ): Promise<string> {
     if (!this.geminiClient && !this.openaiClient) {
       throw new Error('LLM Service is not configured. Please set GEMINI_API_KEY or OPENAI_API_KEY environment variables.');
     }
 
     if (this.geminiClient) {
-      return this.executeWithModelFallback(async (modelName) => {
+      return this.executeWithModelFallback(priority, async (modelName) => {
         const model = this.geminiClient!.getGenerativeModel({
           model: modelName,
           systemInstruction: systemPrompt,
@@ -100,7 +110,11 @@ export class LLMService {
   /**
    * Generates a structured JSON object from the active LLM (Gemini or OpenAI).
    */
-  async generateJSON<T>(prompt: string, systemPrompt: string): Promise<T> {
+  async generateJSON<T>(
+    prompt: string,
+    systemPrompt: string,
+    priority: 'high' | 'low' = 'low'
+  ): Promise<T> {
     if (!this.geminiClient && !this.openaiClient) {
       throw new Error('LLM Service is not configured. Please set GEMINI_API_KEY or OPENAI_API_KEY environment variables.');
     }
@@ -108,7 +122,7 @@ export class LLMService {
     let responseText = '';
 
     if (this.geminiClient) {
-      responseText = await this.executeWithModelFallback(async (modelName) => {
+      responseText = await this.executeWithModelFallback(priority, async (modelName) => {
         const model = this.geminiClient!.getGenerativeModel({
           model: modelName,
           systemInstruction: systemPrompt + JSON_PROMPT_SUFFIX,
@@ -158,21 +172,25 @@ export class LLMService {
   /**
    * Helper that executes the operation using Gemini fallback models sequentially.
    */
-  private async executeWithModelFallback<T>(operation: (modelName: string) => Promise<T>): Promise<T> {
+  private async executeWithModelFallback<T>(
+    priority: 'high' | 'low',
+    operation: (modelName: string) => Promise<T>
+  ): Promise<T> {
+    const models = priority === 'high' ? HIGH_PRIORITY_MODELS : LOW_PRIORITY_MODELS;
     let lastError: any = null;
 
-    for (const modelName of FALLBACK_MODELS) {
+    for (const modelName of models) {
       try {
-        console.log(`LLMService: Trying model "${modelName}"...`);
+        console.log(`LLMService [Priority: ${priority}]: Trying model "${modelName}"...`);
         return await operation(modelName);
       } catch (err: any) {
         lastError = err;
         const errMsg = String(err?.message || err || '');
-        console.warn(`LLMService: Model "${modelName}" failed with error: ${errMsg}. Trying fallback model...`);
+        console.warn(`LLMService [Priority: ${priority}]: Model "${modelName}" failed with error: ${errMsg}. Trying fallback model...`);
       }
     }
 
-    throw new Error(`LLMService: All fallback models failed. Last error: ${lastError?.message || lastError}`);
+    throw new Error(`LLMService: All fallback models failed for priority ${priority}. Last error: ${lastError?.message || lastError}`);
   }
 
   /**

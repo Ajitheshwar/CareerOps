@@ -1,0 +1,13 @@
+<select 
+  [value]="status" 
+  (change)="onSelect($event)" 
+  [class.status-select-dropdown]="!isCompact"
+  [class.status-select-compact]="isCompact"
+  [ngClass]="statusClass(status)"
+>
+  <option value="scraped">Scraped</option>
+  <option value="applied">Applied</option>
+  <option value="interviewing">Interviewing</option>
+  <option value="accepted">Offer Accepted</option>
+  <option value="rejected">Archived/Rejected</option>
+</select>

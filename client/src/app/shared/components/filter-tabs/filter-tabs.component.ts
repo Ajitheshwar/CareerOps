@@ -1,6 +1,14 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+export interface TabItem {
+  id: string;
+  label: string;
+  icon?: string;
+  count?: number;
+  customClass?: string;
+}
+
 @Component({
   selector: 'app-filter-tabs',
   standalone: true,
@@ -9,14 +17,12 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./filter-tabs.component.css']
 })
 export class FilterTabsComponent {
-  @Input() activeFilter: 'all' | 'linkedin' | 'naukri' = 'all';
-  @Input() totalCount = 0;
-  @Input() linkedinCount = 0;
-  @Input() naukriCount = 0;
+  @Input() tabs: TabItem[] = [];
+  @Input() activeTabId: string = '';
 
-  @Output() filterChange = new EventEmitter<'all' | 'linkedin' | 'naukri'>();
+  @Output() tabChange = new EventEmitter<string>();
 
-  selectFilter(filter: 'all' | 'linkedin' | 'naukri') {
-    this.filterChange.emit(filter);
+  selectTab(id: string) {
+    this.tabChange.emit(id);
   }
 }

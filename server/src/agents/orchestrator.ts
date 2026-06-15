@@ -1,11 +1,11 @@
 import { AgentState, AgentLog, Job, MatchResult, LogLevel } from '../types';
 import { LLMService } from '../llm';
-import { JobSearchAgent } from './jobSearchSerp';
+import { JobSearchAgent } from './job-search/JobSearchAgent';
 import { ResumeAnalyzerAgent } from './resumeAnalyzer';
 import { TailoringAgent } from './tailoring';
 import { InterviewPrepAgent } from './interviewPrep';
 import { QueryGeneratorAgent } from './queryGenerator';
-import { saveJobHistory, updateJobTailoring, updateJobInterviewPrep, getAllJobHistory, getDeletedJobHistory } from '../db';
+import { saveJobHistory, updateJobTailoring, updateJobInterviewPrep, getAllJobHistory, getDeletedJobHistory, softDeleteJob } from '../db';
 
 export class AgentOrchestrator {
   private llm: LLMService;
@@ -66,6 +66,12 @@ export class AgentOrchestrator {
     this.notifyState();
   }
 
+  removeJob(jobId: string) {
+    this.state.foundJobs = this.state.foundJobs.filter(j => j.id !== jobId);
+    this.state.matchingResults = this.state.matchingResults.filter(m => m.jobId !== jobId);
+    this.notifyState();
+  }
+
 
   registerListener(cb: (state: AgentState) => void) {
     this.listeners.push(cb);
@@ -79,7 +85,7 @@ export class AgentOrchestrator {
     this.listeners.forEach(cb => cb({ ...this.state }));
   }
 
-  private addLog(agent: any, level: LogLevel, message: string) {
+  public addLog(agent: any, level: LogLevel, message: string) {
     const log: AgentLog = {
       id: Math.random().toString(36).substring(7),
       timestamp: new Date().toISOString(),
@@ -162,7 +168,15 @@ export class AgentOrchestrator {
           ...item.job,
           date: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
         }));
-        this.state.matchingResults = filtered.map(item => item.matchResult).filter(Boolean) as MatchResult[];
+        this.state.matchingResults = filtered.map(item => {
+          if (item.matchResult) {
+            return {
+              ...item.matchResult,
+              jobId: item.matchResult.jobId || item.id
+            };
+          }
+          return null;
+        }).filter(Boolean) as MatchResult[];
         
         // Hydrate other loaded artifacts to state
         filtered.forEach(item => {
@@ -267,6 +281,15 @@ export class AgentOrchestrator {
               this.notifyState();
             }
           );
+
+          if (result.matchScore !== null && result.matchScore !== undefined && typeof result.matchScore === 'number' && result.matchScore < 60) {
+            this.addLog('Orchestrator', 'info', `Job "${job.title}" at ${job.company} match score is ${result.matchScore}% (< 60%). Deleting from DB and frontend...`);
+            await softDeleteJob(job.id);
+            this.state.foundJobs = this.state.foundJobs.filter(fj => fj.id !== job.id);
+            this.notifyState();
+            continue;
+          }
+
           matchResults.push(result);
 
           // Update matchResult in MongoDB
@@ -322,9 +345,9 @@ export class AgentOrchestrator {
   }
 
   /**
-   * Run the tailoring and interview prep phase for a selected job
+   * Run the resume tailoring and cover letter generation phase for a selected job
    */
-  async runTailoringAndPrep(jobId: string) {
+  async runTailoring(jobId: string) {
     const job = this.state.foundJobs.find(j => j.id === jobId);
     if (!job) {
       this.addLog('Orchestrator', 'warn', `Tailoring failed: Job with ID "${jobId}" not found in current state.`);
@@ -339,7 +362,7 @@ export class AgentOrchestrator {
     this.addLog('Orchestrator', 'info', 'Handing off to TailoringAgent to customize resume and write cover letter...');
 
     try {
-      // 1. Run Resume Tailoring & Cover Letter
+      // Run Resume Tailoring & Cover Letter
       const tailoringRes = await this.tailoringAgent.run(
         this.state.resumeText,
         job.id,
@@ -359,12 +382,33 @@ export class AgentOrchestrator {
       // Save to MongoDB database history
       await updateJobTailoring(jobId, tailoringRes.tailoredResume, tailoringRes.coverLetter);
 
-      // 2. Run Interview Prep Coach
-      this.state.status = 'preparing';
-      this.notifyState();
+      this.state.status = 'completed';
+      this.addLog('Orchestrator', 'success', `Resume tailoring and cover letter generation completed for ${job.company}!`);
+    } catch (err: any) {
+      this.state.status = 'error';
+      this.addLog('Orchestrator', 'warn', `Tailoring pipeline error: ${err.message}`);
+    }
+  }
 
-      this.addLog('Orchestrator', 'info', 'Handing off to InterviewPrepAgent to generate prep questions & coach strategies...');
+  /**
+   * Run the interview preparation and coaching phase for a selected job
+   */
+  async runInterviewPrep(jobId: string) {
+    const job = this.state.foundJobs.find(j => j.id === jobId);
+    if (!job) {
+      this.addLog('Orchestrator', 'warn', `Interview prep failed: Job with ID "${jobId}" not found in current state.`);
+      return;
+    }
 
+    this.state.selectedJobId = jobId;
+    this.state.status = 'preparing';
+    this.notifyState();
+
+    this.addLog('Orchestrator', 'thought', `Initiating interview preparation phase for "${job.title}" at ${job.company}.`);
+    this.addLog('Orchestrator', 'info', 'Handing off to InterviewPrepAgent to generate prep questions & coach strategies...');
+
+    try {
+      // Run Interview Prep Coach
       const prepRes = await this.interviewPrepAgent.run(
         this.state.resumeText,
         job.id,
@@ -384,10 +428,10 @@ export class AgentOrchestrator {
       await updateJobInterviewPrep(jobId, prepRes);
 
       this.state.status = 'completed';
-      this.addLog('Orchestrator', 'success', `Resume tailoring, cover letter generation, and interview prep guides completed for ${job.company}!`);
+      this.addLog('Orchestrator', 'success', `Interview prep guide completed for ${job.company}!`);
     } catch (err: any) {
       this.state.status = 'error';
-      this.addLog('Orchestrator', 'warn', `Tailoring & Prep pipeline error: ${err.message}`);
+      this.addLog('Orchestrator', 'warn', `Interview prep pipeline error: ${err.message}`);
     }
   }
 }

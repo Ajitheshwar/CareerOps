@@ -11,11 +11,10 @@
       icon="tailor"
     ></app-empty-state>
   } @else if (status() === 'tailoring') {
-    <div class="glass-card empty-state">
-      <div class="spinner"></div>
-      <h4>Agent is tailoring materials...</h4>
-      <p>Generating resume adjustments and a target cover letter for <strong>{{ job()?.company }}</strong>.</p>
-    </div>
+    <app-agent-loader
+      title="Agent is tailoring materials..."
+      [description]="'Generating resume adjustments and a target cover letter for <strong>' + job()?.company + '</strong>.'"
+    ></app-agent-loader>
   } @else if (!tailoredResume() && !coverLetter()) {
     <app-empty-state 
       title="Material tailoring required" 
@@ -43,59 +42,15 @@
 
     @if (activeTab() === 'resume') {
       <div class="tab-content fade-in">
-        <!-- Professional Summary comparison -->
-        <div class="glass-card section-card">
-          <h4>Refined Professional Summary</h4>
-          <div class="comparison-grid">
-            <div class="comp-box">
-              <span class="comp-label original">Original</span>
-              <p class="summary-text">{{ tailoredResume()?.originalSummary }}</p>
-            </div>
-            <div class="comp-box active">
-              <span class="comp-label tailored">Tailored Summary Suggestion</span>
-              <p class="summary-text">{{ tailoredResume()?.tailoredSummary }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bullet points comparison list -->
-        <div class="bullets-section">
-          <h3>Work Experience Customization</h3>
-          @for (change of tailoredResume()?.bulletPointChanges; track change.original; let idx = $index) {
-            <div class="glass-card bullet-card">
-              <div class="bullet-card-header">
-                <span class="badge badge-purple">Bullet Suggestion #{{ idx + 1 }}</span>
-                <span class="rationale-text">💡 {{ change.rationale }}</span>
-              </div>
-
-              <div class="comparison-grid mt-12">
-                <div class="comp-box">
-                  <span class="comp-label original">Replace original</span>
-                  <p class="bullet-desc">❌ "{{ change.original }}"</p>
-                </div>
-                <div class="comp-box active">
-                  <span class="comp-label tailored">With tailored version</span>
-                  <p class="bullet-desc green-text">✅ "{{ change.tailored }}"</p>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
+        <app-resume-tailoring-details [tailoredResume]="tailoredResume()"></app-resume-tailoring-details>
       </div>
     }
 
     @if (activeTab() === 'cover-letter') {
       <div class="tab-content fade-in">
-        <div class="glass-card letter-card">
-          <div class="letter-header">
-            <h4>Persuasive Cover Letter</h4>
-            <button (click)="copyCoverLetter()" class="btn btn-secondary btn-sm">
-              {{ copyButtonText() }}
-            </button>
-          </div>
-          <pre class="letter-pre">{{ coverLetter() }}</pre>
-        </div>
+        <app-cover-letter-draft [coverLetter]="coverLetter()"></app-cover-letter-draft>
       </div>
     }
   }
 </div>
+

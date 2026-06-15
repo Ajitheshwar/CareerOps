@@ -1,0 +1,40 @@
+<div class="resume-tailor-details-wrapper" *ngIf="tailoredResume">
+  <!-- Professional Summary comparison -->
+  <div class="glass-card section-card">
+    <h4>Refined Professional Summary</h4>
+    <div class="comparison-grid">
+      <div class="comp-box">
+        <span class="comp-label original">Original Summary</span>
+        <p class="summary-text">{{ tailoredResume.originalSummary }}</p>
+      </div>
+      <div class="comp-box active">
+        <span class="comp-label tailored">Tailored Summary Suggestion</span>
+        <p class="summary-text">{{ tailoredResume.tailoredSummary }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bullet points comparison list -->
+  <div class="bullets-section">
+    <h3>Work Experience Customization</h3>
+    @for (change of tailoredResume.bulletPointChanges; track change.original; let idx = $index) {
+      <div class="glass-card bullet-card">
+        <div class="bullet-card-header">
+          <span class="badge badge-purple">Bullet Suggestion #{{ idx + 1 }}</span>
+          <span class="rationale-text">💡 Rationale: {{ change.rationale }}</span>
+        </div>
+
+        <div class="comparison-grid mt-12">
+          <div class="comp-box">
+            <span class="comp-label original">Replace original</span>
+            <p class="bullet-desc">❌ "{{ change.original }}"</p>
+          </div>
+          <div class="comp-box active">
+            <span class="comp-label tailored">With tailored version</span>
+            <p class="bullet-desc green-text">✅ "{{ change.tailored }}"</p>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

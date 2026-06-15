@@ -1,0 +1,85 @@
+<div class="interview-practice-wrapper" *ngIf="questions.length > 0">
+  <!-- Flashcard Interface -->
+  <div class="glass-card section-card" *ngIf="activeQuestion() as activeQ">
+    <div class="card-title-row">
+      <h4>Flashcard Practice Mode</h4>
+      <span class="card-indicator">Card {{ activeCardIndex() + 1 }} of {{ questions.length }}</span>
+    </div>
+
+    <div class="card-deck">
+      <div 
+        class="flashcard" 
+        [class.flipped]="isFlipped()" 
+        (click)="toggleFlip()"
+      >
+        <!-- Front Face -->
+        <div class="card-face card-front">
+          <span class="badge" [ngClass]="activeQ.type === 'technical' ? 'badge-cyan' : 'badge-purple'">
+            {{ activeQ.type }} Question
+          </span>
+          <p class="question-text">{{ activeQ.question }}</p>
+          <span class="flip-prompt">Click card to reveal answer & tips</span>
+        </div>
+
+        <!-- Back Face -->
+        <div class="card-face card-back">
+          <div class="scrollable-back">
+            <span class="badge badge-green">Ideal Answer Outline</span>
+            <p class="answer-template">{{ activeQ.answerTemplate }}</p>
+            
+            <span class="badge badge-purple mt-12">Coaching Tip</span>
+            <p class="tip-text">{{ activeQ.tips }}</p>
+          </div>
+          <span class="flip-prompt text-muted">Click card to flip back</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="deck-controls">
+      <button (click)="prevCard()" class="btn btn-secondary" [disabled]="activeCardIndex() === 0">Previous</button>
+      <button (click)="nextCard()" class="btn btn-secondary" [disabled]="activeCardIndex() === questions.length - 1">Next</button>
+    </div>
+  </div>
+
+  <!-- Simulated Interactive Coach Chat -->
+  <div class="glass-card chat-card" *ngIf="activeQuestion()">
+    <h4>Interactive Response Evaluation</h4>
+    <p class="chat-desc">Select a question above, type your answer below, and get real-time feedback on how to improve.</p>
+
+    <div class="chat-history">
+      @for (msg of chatHistory(); track msg.text) {
+        <div class="chat-bubble" [ngClass]="msg.sender">
+          <span class="bubble-sender">{{ msg.sender === 'coach' ? 'AI Coach' : 'You' }}</span>
+          <p class="bubble-text">{{ msg.text }}</p>
+        </div>
+      }
+
+      @if (isCoachTyping()) {
+        <div class="chat-bubble coach">
+          <span class="bubble-sender">AI Coach</span>
+          <div class="dots-loader">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="chat-input-row">
+      <input 
+        type="text" 
+        class="form-input" 
+        [(ngModel)]="userAnswer" 
+        (keyup.enter)="sendAnswer()"
+        placeholder="Type your answer to this question here..." 
+        [disabled]="isCoachTyping()"
+      />
+      <button 
+        (click)="sendAnswer()" 
+        class="btn btn-primary" 
+        [disabled]="!userAnswer.trim() || isCoachTyping()"
+      >
+        Evaluate
+      </button>
+    </div>
+  </div>
+</div>

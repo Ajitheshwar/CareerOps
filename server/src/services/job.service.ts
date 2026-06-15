@@ -53,6 +53,20 @@ export class JobService {
       historicalJob.interviewPrep
     );
 
+    if (matchResult.matchScore !== null && matchResult.matchScore !== undefined && typeof matchResult.matchScore === 'number' && matchResult.matchScore < 60) {
+      console.log(`[JobService Single Analysis] Score is ${matchResult.matchScore}% (< 60%). Soft-deleting job ${jobId}.`);
+      await JobRepository.softDeleteJob(jobId);
+      
+      try {
+        const { StateService } = require('./state.service');
+        const orchestrator = StateService.getOrchestrator();
+        orchestrator.addLog('Orchestrator', 'info', `Job "${historicalJob.job.title}" at ${historicalJob.job.company} re-analysis score is ${matchResult.matchScore}% (< 60%). Deleting from DB and frontend...`);
+        orchestrator.removeJob(jobId);
+      } catch (stateErr) {
+        console.error('Failed to remove job from active orchestrator state:', stateErr);
+      }
+    }
+
     return matchResult;
   }
 
@@ -94,7 +108,20 @@ export class JobService {
   }
 
   static async deleteJob(id: string): Promise<void> {
+    const historicalJob = await JobRepository.getJobHistoryById(id);
+    const jobTitle = historicalJob?.job?.title || 'Unknown Title';
+    const company = historicalJob?.job?.company || 'Unknown Company';
+
     await JobRepository.softDeleteJob(id);
+
+    try {
+      const { StateService } = require('./state.service');
+      const orchestrator = StateService.getOrchestrator();
+      orchestrator.addLog('Orchestrator', 'info', `Job "${jobTitle}" at ${company} manually deleted/hidden. Excluding from future search queries.`);
+      orchestrator.removeJob(id);
+    } catch (stateErr) {
+      console.error('Failed to update orchestrator state for deleted job:', stateErr);
+    }
   }
 }
 

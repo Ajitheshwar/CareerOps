@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { AgentState, AgentLog, Job, MatchResult, JobListing, MockInterview } from '../types';
+import { AgentState, AgentLog, Job, MatchResult, JobListing, MockInterview, HistoricalJob } from '../types';
 
 const API_BASE = 'http://localhost:5000/api';
 
@@ -172,7 +172,7 @@ export class AgentService {
   }
 
   /**
-   * Trigger the tailoring and interview prep phase for a job
+   * Trigger the tailoring phase for a job
    */
   async startTailoring(jobId: string) {
     try {
@@ -189,6 +189,51 @@ export class AgentService {
     } catch (err: any) {
       console.error('Error triggering tailoring:', err);
     }
+  }
+
+  /**
+   * Trigger the interview prep phase for a job
+   */
+  async startInterviewPrep(jobId: string) {
+    try {
+      const res = await fetch(`${API_BASE}/prep-interview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to start interview preparation.');
+      }
+    } catch (err: any) {
+      console.error('Error triggering interview preparation:', err);
+    }
+  }
+
+  /**
+   * Set the active selected job locally
+   */
+  selectJob(jobId: string) {
+    this.stateSignal.update(curr => ({
+      ...curr,
+      selectedJobId: jobId
+    }));
+  }
+
+  /**
+   * Fetch a single job's historical details (including matching, tailoring, prep)
+   */
+  async fetchJobDetails(id: string): Promise<HistoricalJob | null> {
+    try {
+      const res = await fetch(`${API_BASE}/jobs/${id}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.error(`Failed to fetch job details for ${id}:`, err);
+    }
+    return null;
   }
 
   /**
@@ -209,6 +254,16 @@ export class AgentService {
 
       const matchResult: MatchResult = await res.json();
 
+      // If the match score is less than 60%, immediately remove the job from local state
+      if (matchResult.matchScore !== null && matchResult.matchScore !== undefined && typeof matchResult.matchScore === 'number' && matchResult.matchScore < 60) {
+        this.stateSignal.update(curr => ({
+          ...curr,
+          foundJobs: curr.foundJobs.filter(j => j.id !== jobId),
+          matchingResults: curr.matchingResults.filter(m => m.jobId !== jobId)
+        }));
+        return matchResult;
+      }
+
       // Update stateSignal locally
       this.stateSignal.update(curr => {
         const matchIndex = curr.matchingResults.findIndex(m => m.jobId === jobId);
@@ -219,17 +274,37 @@ export class AgentService {
           updatedMatches.push(matchResult);
         }
 
-        // Sort by match score descending, with null scores at the bottom
+        // Sort by match score descending, with null/undefined scores at the bottom
         updatedMatches.sort((a, b) => {
-          if (a.matchScore === null && b.matchScore === null) return 0;
-          if (a.matchScore === null) return 1;
-          if (b.matchScore === null) return -1;
-          return b.matchScore - a.matchScore;
+          const scoreA = (a.matchScore !== null && a.matchScore !== undefined) ? Number(a.matchScore) : null;
+          const scoreB = (b.matchScore !== null && b.matchScore !== undefined) ? Number(b.matchScore) : null;
+
+          if (scoreA === null && scoreB === null) return 0;
+          if (scoreA === null) return 1;
+          if (scoreB === null) return -1;
+          if (isNaN(scoreA) && isNaN(scoreB)) return 0;
+          if (isNaN(scoreA)) return 1;
+          if (isNaN(scoreB)) return -1;
+
+          return scoreB - scoreA;
         });
 
-        // Reorder foundJobs to match
-        const jobMap = new Map(curr.foundJobs.map(j => [j.id, j]));
-        const updatedJobs = updatedMatches.map(mr => jobMap.get(mr.jobId)!).filter(Boolean);
+        // Reorder foundJobs to match the updated matches descending order, keeping all jobs intact
+        const updatedJobs = [...curr.foundJobs].sort((a, b) => {
+          const matchA = updatedMatches.find(m => m.jobId === a.id);
+          const matchB = updatedMatches.find(m => m.jobId === b.id);
+          const scoreA = (matchA?.matchScore !== null && matchA?.matchScore !== undefined) ? Number(matchA.matchScore) : null;
+          const scoreB = (matchB?.matchScore !== null && matchB?.matchScore !== undefined) ? Number(matchB.matchScore) : null;
+
+          if (scoreA === null && scoreB === null) return 0;
+          if (scoreA === null) return 1;
+          if (scoreB === null) return -1;
+          if (isNaN(scoreA) && isNaN(scoreB)) return 0;
+          if (isNaN(scoreA)) return 1;
+          if (isNaN(scoreB)) return -1;
+
+          return scoreB - scoreA;
+        });
 
         return {
           ...curr,

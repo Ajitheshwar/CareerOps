@@ -67,23 +67,21 @@
 
           <div class="col-body">
             @for (job of getJobsByStatus(col.status); track job.id) {
-              <div class="glass-card job-track-card fade-in">
+              <div class="glass-card job-track-card fade-in" (click)="viewJobDetails(job.id)" style="cursor: pointer;">
                 <h5>{{ job.title }}</h5>
                 <span class="company">{{ job.company }}</span>
                 <div class="meta">📍 {{ job.location }}</div>
                 
                 @if (job.url) {
-                  <a [href]="job.url" target="_blank" class="job-link">🔗 View Job</a>
+                  <a [href]="job.url" target="_blank" class="job-link" (click)="$event.stopPropagation()">🔗 View Job</a>
                 }
 
-                <div class="card-controls">
-                  <select (change)="onStatusChange(job.id, $event)" class="status-select">
-                    <option [selected]="job.status === 'scraped'" value="scraped">Scraped</option>
-                    <option [selected]="job.status === 'applied'" value="applied">Applied</option>
-                    <option [selected]="job.status === 'interviewing'" value="interviewing">Interviewing</option>
-                    <option [selected]="job.status === 'rejected'" value="rejected">Rejected</option>
-                    <option [selected]="job.status === 'accepted'" value="accepted">Accepted</option>
-                  </select>
+                <div class="card-controls" (click)="$event.stopPropagation()">
+                  <app-status-selector
+                    [status]="job.status"
+                    [isCompact]="true"
+                    (statusChange)="onStatusChange(job.id, $event)"
+                  ></app-status-selector>
                 </div>
               </div>
             } @empty {
