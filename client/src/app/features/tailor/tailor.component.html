@@ -1,4 +1,4 @@
-<div class="tailor-wrapper fade-in">
+<div class="tailor-wrapper fade-in no-print">
   <div class="tailor-header">
     <h2>Resume & Cover Letter Customization</h2>
     <p>Review agent-tailored materials specifically crafted for the target position.</p>
@@ -22,22 +22,43 @@
       icon="tailor"
     ></app-empty-state>
   } @else {
-    <!-- Tabs for Resume vs Cover Letter -->
-    <div class="tab-buttons">
-      <button 
-        class="tab-btn" 
-        [class.active]="activeTab() === 'resume'" 
-        (click)="activeTab.set('resume')"
-      >
-        Adjusted Resume Bullets
-      </button>
-      <button 
-        class="tab-btn" 
-        [class.active]="activeTab() === 'cover-letter'" 
-        (click)="activeTab.set('cover-letter')"
-      >
-        Tailored Cover Letter
-      </button>
+    <!-- Tabs and Exports Bar -->
+    <div class="tailor-actions-bar">
+      <!-- Tabs for Resume vs Cover Letter -->
+      <div class="tab-buttons">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'resume'" 
+          (click)="activeTab.set('resume')"
+        >
+          Adjusted Resume Bullets
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'cover-letter'" 
+          (click)="activeTab.set('cover-letter')"
+        >
+          Tailored Cover Letter
+        </button>
+      </div>
+
+      <!-- Export Dropdown -->
+      <div class="dropdown-wrapper">
+        <button class="btn btn-secondary flex-center gap-2 dropdown-toggle" (click)="toggleDropdown()" title="Open export options">
+          <span>📤</span> Export Resume <span class="caret-arrow">▼</span>
+        </button>
+        <div class="dropdown-menu fade-in" *ngIf="isDropdownOpen()">
+          <button class="dropdown-item flex-center gap-2" (click)="selectExport('pdf')">
+            <span>📄</span> Export to PDF
+          </button>
+          <button class="dropdown-item flex-center gap-2" (click)="selectExport('word')">
+            <span>📝</span> Download Word (.doc)
+          </button>
+          <button class="dropdown-item flex-center gap-2" (click)="selectExport('excel')">
+            <span>📊</span> Export Changes (.csv)
+          </button>
+        </div>
+      </div>
     </div>
 
     @if (activeTab() === 'resume') {
@@ -54,3 +75,72 @@
   }
 </div>
 
+<!-- Print Preview Overlay (shown when showPreview is active) -->
+<div class="print-preview-overlay fade-in" *ngIf="showPreview()">
+  <div class="print-preview-header no-print">
+    <div class="header-left">
+      <h3>Resume Print Preview</h3>
+      <p>Configure page margins to 'Default' or 'None' and enable background graphics in your print settings.</p>
+    </div>
+    <div class="header-right flex-center gap-2">
+      <button class="btn btn-primary flex-center gap-2" (click)="triggerPDF()">
+        <span>🖨️</span> Print / Save PDF
+      </button>
+      <button class="btn btn-danger flex-center gap-2" (click)="showPreview.set(false)">
+        <span>❌</span> Close
+      </button>
+    </div>
+  </div>
+  
+  <div class="print-preview-container">
+    <div class="resume-sheet" *ngIf="parsedResume() as resume">
+      <header class="resume-header">
+        <h1>{{ resume.header.name }}</h1>
+        <h2>{{ resume.header.title }}</h2>
+        <div class="resume-contact">
+          @for (contact of resume.header.contactItems; track contact; let isLast = $last) {
+            <span>{{ contact }}</span>
+            @if (!isLast) {
+              <span class="divider">•</span>
+            }
+          }
+        </div>
+      </header>
+      
+      <main class="resume-body">
+        @for (section of resume.sections; track section.title) {
+          <section class="resume-section">
+            <h3>{{ section.title }}</h3>
+            
+            @if (section.isSummary) {
+              <p class="summary-paragraph">{{ section.content.join(' ') }}</p>
+            } @else if (section.isSkills) {
+              <div class="skills-container">
+                @for (line of section.content; track line) {
+                  <p class="skills-line">{{ line }}</p>
+                }
+              </div>
+            } @else if (section.isWorkOrProjects) {
+              <div class="experience-list">
+                @for (line of section.content; track line; let idx = $index) {
+                  @if (isSubHeader(line, idx, section)) {
+                    <h4 class="experience-title" [class.mt-4]="idx > 0">{{ line }}</h4>
+                  } @else {
+                    <ul class="experience-bullets">
+                      <li>{{ line }}</li>
+                    </ul>
+                  }
+                }
+              </div>
+            } @else {
+              <!-- Fallback -->
+              @for (line of section.content; track line) {
+                <p class="general-line">{{ line }}</p>
+              }
+            }
+          </section>
+        }
+      </main>
+    </div>
+  </div>
+</div>

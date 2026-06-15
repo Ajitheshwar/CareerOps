@@ -158,6 +158,30 @@ export class LLMService {
    */
   private cleanJSONString(str: string): string {
     let cleaned = str.trim();
+    
+    // Attempt to extract the JSON structure by finding the first brace/bracket and matching last brace/bracket
+    const firstCurly = cleaned.indexOf('{');
+    const firstSquare = cleaned.indexOf('[');
+    
+    let startIdx = -1;
+    let endChar = '';
+    
+    if (firstCurly !== -1 && (firstSquare === -1 || firstCurly < firstSquare)) {
+      startIdx = firstCurly;
+      endChar = '}';
+    } else if (firstSquare !== -1) {
+      startIdx = firstSquare;
+      endChar = ']';
+    }
+    
+    if (startIdx !== -1) {
+      const lastIdx = cleaned.lastIndexOf(endChar);
+      if (lastIdx > startIdx) {
+        cleaned = cleaned.substring(startIdx, lastIdx + 1);
+      }
+    }
+    
+    // Fallback cleaning if no structure found
     if (cleaned.startsWith('```json')) {
       cleaned = cleaned.substring(7);
     } else if (cleaned.startsWith('```')) {
@@ -166,6 +190,7 @@ export class LLMService {
     if (cleaned.endsWith('```')) {
       cleaned = cleaned.substring(0, cleaned.length - 3);
     }
+    
     return cleaned.trim();
   }
 
