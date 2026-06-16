@@ -8,11 +8,12 @@ import { FilterTabsComponent } from '../../shared/components/filter-tabs/filter-
 import { ScoreRingComponent } from '../../shared/components/score-ring/score-ring.component';
 import { MatchEvaluationComponent } from '../../shared/components/match-evaluation/match-evaluation.component';
 import { StatusSelectorComponent } from '../../shared/components/status-selector/status-selector.component';
+import { AddJobModalComponent } from '../../shared/components/add-job-modal/add-job-modal.component';
 
 @Component({
   selector: 'app-job-matches',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent, FilterTabsComponent, ScoreRingComponent, MatchEvaluationComponent, StatusSelectorComponent],
+  imports: [CommonModule, EmptyStateComponent, FilterTabsComponent, ScoreRingComponent, MatchEvaluationComponent, StatusSelectorComponent, AddJobModalComponent],
   templateUrl: './matches.component.html',
   styleUrls: ['./matches.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -20,6 +21,21 @@ import { StatusSelectorComponent } from '../../shared/components/status-selector
 export class JobMatchesComponent implements OnInit {
   agentService = inject(AgentService);
   router = inject(Router);
+
+  /** Controls Add Job modal visibility */
+  showAddJobModal = signal<boolean>(false);
+
+  openAddJobModal(): void {
+    this.showAddJobModal.set(true);
+  }
+
+  onAddJobSaved(): void {
+    this.showAddJobModal.set(false);
+  }
+
+  onAddJobModalClose(): void {
+    this.showAddJobModal.set(false);
+  }
 
   ngOnInit() {
     this.agentService.loadTrackerJobs();
@@ -39,16 +55,18 @@ export class JobMatchesComponent implements OnInit {
   matches = this.agentService.matches;
 
   expandedJobId = signal<string | null>(null);
-  activeFilter = signal<'all' | 'linkedin' | 'naukri'>('all');
+  activeFilter = signal<'all' | 'linkedin' | 'naukri' | 'manual'>('all');
 
   totalCount = computed(() => this.jobs().length);
   linkedinCount = computed(() => this.jobs().filter(j => (j.source || '').toLowerCase().includes('linkedin')).length);
   naukriCount = computed(() => this.jobs().filter(j => (j.source || '').toLowerCase().includes('naukri')).length);
+  manualCount = computed(() => this.jobs().filter(j => (j.source || '').toLowerCase().includes('manual')).length);
 
   filterTabs = computed(() => [
     { id: 'all', label: 'All Jobs', icon: '🌐', count: this.totalCount() },
     { id: 'linkedin', label: 'LinkedIn', icon: '💼', count: this.linkedinCount(), customClass: 'linkedin-tab' },
-    { id: 'naukri', label: 'Naukri', icon: '🎯', count: this.naukriCount(), customClass: 'naukri-tab' }
+    { id: 'naukri', label: 'Naukri', icon: '🎯', count: this.naukriCount(), customClass: 'naukri-tab' },
+    { id: 'manual', label: 'Manual', icon: '✍️', count: this.manualCount(), customClass: 'manual-tab' }
   ]);
 
   sortBy = signal<'matchingScore' | 'date'>('matchingScore');
@@ -66,6 +84,7 @@ export class JobMatchesComponent implements OnInit {
           const src = (job.source || '').toLowerCase();
           if (filter === 'linkedin') return src.includes('linkedin');
           if (filter === 'naukri') return src.includes('naukri');
+          if (filter === 'manual') return src.includes('manual');
           return true;
         });
 
@@ -94,7 +113,7 @@ export class JobMatchesComponent implements OnInit {
   });
 
   setFilter(filter: string) {
-    this.activeFilter.set(filter as 'all' | 'linkedin' | 'naukri');
+    this.activeFilter.set(filter as 'all' | 'linkedin' | 'naukri' | 'manual');
     this.expandedJobId.set(null);
   }
 

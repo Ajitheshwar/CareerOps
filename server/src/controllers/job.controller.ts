@@ -84,6 +84,16 @@ export class JobController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  static async addAndAnalyzeJob(req: Request, res: Response) {
+    const { title, company, description, location } = req.body;
+    try {
+      const result = await JobService.addAndAnalyzeJob({ title, company, description, location });
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
 }
 
 

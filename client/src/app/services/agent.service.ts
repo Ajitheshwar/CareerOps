@@ -507,6 +507,35 @@ export class AgentService {
   }
 
   /**
+   * Manually add a job and run the full LLM matching pipeline against the stored resume.
+   * Injects the result directly into state so matches list updates without a page reload.
+   */
+  async addAndAnalyzeJob(jobData: { title: string; company: string; description: string; location?: string }): Promise<void> {
+    const res = await fetch(`${API_BASE}/jobs/add-and-analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jobData)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || 'Failed to add and analyze job.');
+    }
+
+    const { job, matchResult }: { job: Job; matchResult: MatchResult } = await res.json();
+
+    // Prepend new job + result into existing state (immediate UI update, no page reload)
+    this.stateSignal.update(curr => ({
+      ...curr,
+      foundJobs: [job, ...curr.foundJobs],
+      matchingResults: [matchResult, ...curr.matchingResults]
+    }));
+
+    // Keep tracker board in sync
+    await this.loadTrackerJobs();
+  }
+
+  /**
    * Update tracking status for job listing
    */
   async updateJobStatus(id: string, status: JobListing['status']) {

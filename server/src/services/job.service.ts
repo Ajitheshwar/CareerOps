@@ -4,7 +4,7 @@ import { LLMService } from '../llm';
 import { JobListing } from '../db';
 import { ResumeAnalyzerAgent } from '../agents/resumeAnalyzer';
 import { UserRepository } from '../repositories/user.repository';
-import { MatchResult } from '../types';
+import { Job, MatchResult } from '../types';
 
 export class JobService {
   static async getJobs(): Promise<JobListing[]> {
@@ -122,6 +122,56 @@ export class JobService {
     } catch (stateErr) {
       console.error('Failed to update orchestrator state for deleted job:', stateErr);
     }
+  }
+
+  /**
+   * Creates a job from manually entered data, runs full LLM resume analysis,
+   * and persists the result — identical lifecycle to the main search pipeline.
+   * Does not apply the < 60% auto-delete rule since the user explicitly added this role.
+   */
+  static async addAndAnalyzeJob(jobData: {
+    title: string;
+    company: string;
+    description: string;
+    location?: string;
+  }): Promise<{ job: Job; matchResult: MatchResult }> {
+    const jobId = Math.random().toString(36).substring(7);
+
+    const job: Job = {
+      id: jobId,
+      title: jobData.title,
+      company: jobData.company,
+      description: jobData.description,
+      location: jobData.location || 'Remote',
+      source: 'manual',
+      date: new Date().toISOString()
+    };
+
+    // Persist job to jobs_history (and job_listings) first
+    await JobRepository.saveJobHistory(job);
+
+    // Fetch resume from stored user profile
+    const profile = await UserRepository.getUserProfile();
+    if (!profile?.resumeText) {
+      throw new Error('Resume not found. Please upload your resume in the Profile section first.');
+    }
+
+    // Run the exact same LLM analysis agent used by the main search pipeline
+    const llm = new LLMService();
+    const analyzer = new ResumeAnalyzerAgent(llm);
+    const matchResult = await analyzer.run(
+      profile.resumeText,
+      jobId,
+      job.title,
+      job.company,
+      job.description,
+      (log) => console.log(`[JobService AddJob] [${log.level}] ${log.message}`)
+    );
+
+    // Persist the match result back to history
+    await JobRepository.saveJobHistory(job, matchResult);
+
+    return { job, matchResult };
   }
 }
 

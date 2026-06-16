@@ -1,13 +1,26 @@
 <div class="matches-wrapper fade-in">
   <div class="matches-header">
-    <h2>Target Job Matchings</h2>
-    <p>Explore parsed opportunities, evaluated against your resume using LLM analysis.</p>
+    <div class="header-content">
+      <div>
+        <h2>Target Job Matchings</h2>
+        <p>Explore parsed opportunities, evaluated against your resume using LLM analysis.</p>
+      </div>
+      <button
+        id="openAddJobModalBtn"
+        class="btn btn-accent add-job-btn"
+        (click)="openAddJobModal()"
+        title="Manually add a job for AI match analysis"
+      >
+        <span>✍️</span>
+        <span>Add Job</span>
+      </button>
+    </div>
   </div>
 
   @if (jobs().length === 0) {
     <app-empty-state 
       title="No job matchings yet" 
-      message="Configure your resume and hit 'Analyze & Match Jobs' to see matching ratios here." 
+      message="Configure your resume and hit 'Analyze & Match Jobs', or use 'Add Job' above to manually analyse any role." 
       icon="job"
     ></app-empty-state>
   } @else {
@@ -149,3 +162,11 @@
     }
   }
 </div>
+
+<!-- Add Job Modal -->
+@if (showAddJobModal()) {
+  <app-add-job-modal
+    (saved)="onAddJobSaved()"
+    (close)="onAddJobModalClose()"
+  ></app-add-job-modal>
+}

@@ -28,9 +28,8 @@
     
     <a 
       class="nav-item" 
-      [routerLink]="agentService.jobs().length > 0 ? ['/matches'] : null"
+      [routerLink]="['/matches']"
       routerLinkActive="active"
-      [class.disabled]="agentService.jobs().length === 0"
       [title]="isSidebarCollapsed() ? 'Target Matches' : ''"
     >
       <span class="nav-icon">📊</span>

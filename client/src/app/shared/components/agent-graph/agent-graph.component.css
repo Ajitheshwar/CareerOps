@@ -188,7 +188,7 @@ h3 {
 /* Floating Trigger Button */
 .floating-trigger-btn {
   position: fixed;
-  top: 20px;
+  bottom: 100px;
   right: 20px;
   z-index: 1001; /* High enough but below drawer backdrop */
   display: flex;

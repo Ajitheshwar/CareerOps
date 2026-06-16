@@ -1,0 +1,200 @@
+/* =====================================================
+   BACKDROP
+   ===================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* =====================================================
+   PANEL
+   ===================================================== */
+.modal-panel {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  animation: modalSlideUp 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* =====================================================
+   HEADER
+   ===================================================== */
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.modal-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.modal-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-top: 3px;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  color: #fff;
+  margin: 0 0 2px;
+  letter-spacing: -0.02em;
+}
+
+.modal-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-close {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+}
+
+.btn-close:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border-color);
+  color: #fff;
+}
+
+.btn-close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   BODY
+   ===================================================== */
+.modal-body {
+  padding: 24px 28px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+/* Override global margin so fields sit tighter inside the modal */
+.modal-body .form-group {
+  margin-bottom: 14px;
+}
+
+.required {
+  color: var(--accent-rose);
+  margin-left: 2px;
+}
+
+.optional {
+  color: var(--text-muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 180px;
+  line-height: 1.65;
+}
+
+/* =====================================================
+   ERROR BANNER
+   ===================================================== */
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: #fb7185;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.error-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 28px 24px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   SPINNER (inline, for the save button)
+   ===================================================== */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

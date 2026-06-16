@@ -6,6 +6,15 @@
 .matches-header {
   margin-bottom: 8px;
 }
+
+.header-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .matches-header h2 {
   font-size: 1.5rem;
   margin-bottom: 4px;
