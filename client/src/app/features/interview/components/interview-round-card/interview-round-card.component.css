@@ -1,0 +1,62 @@
+.round-item-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
+}
+
+.card-title-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.card-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.card-title-row h5 {
+  font-size: 1rem;
+  color: #fff;
+  margin: 0 0 2px;
+}
+
+.card-title-row p {
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.card-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.card-stats strong {
+  color: #fff;
+}
+
+.card-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.text-rose {
+  color: var(--color-error);
+}

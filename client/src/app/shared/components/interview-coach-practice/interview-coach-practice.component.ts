@@ -1,7 +1,7 @@
 import { Component, Input, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InterviewQuestion } from '../../../types';
+import { InterviewQuestion } from '../../../core/types';
 
 interface ChatMessage {
   sender: 'user' | 'coach';

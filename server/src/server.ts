@@ -1,6 +1,6 @@
 // src/server.ts
 import app from './app';
-import { connectDB } from './db';
+import { connectDB } from './shared/db';
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,7 +13,7 @@ connectDB()
       console.log(`==================================================`);
     });
   })
-  .catch((err) => {
+  .catch((err: any) => {
     console.error('Failed to connect to MongoDB, starting server anyway:', err.message);
     app.listen(PORT, () => {
       console.log(`==================================================`);

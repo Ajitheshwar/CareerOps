@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { AgentService } from '../../../services/agent.service';
+import { AgentService } from '../../../core/services/agent.service';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { AgentGraphComponent } from '../agent-graph/agent-graph.component';
 import { ConsoleComponent } from '../console/console.component';

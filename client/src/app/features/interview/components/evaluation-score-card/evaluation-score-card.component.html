@@ -1,0 +1,60 @@
+<div class="workspace-outcome-box">
+  <!-- Score Breakdown Panels -->
+  <div class="glass-card evaluation-score-card">
+    <div class="score-card-header">
+      <h4>Evaluation Result</h4>
+      <div class="overall-badge-box">
+        <span class="overall-label">Score</span>
+        <span class="overall-score">{{ evaluation.score }}%</span>
+      </div>
+    </div>
+
+    <div class="scores-metrics-grid mt-16">
+      <div class="score-stat-box">
+        <span class="stat-num">{{ evaluation.depthScore || 0 }}</span>
+        <span class="stat-name">Depth</span>
+      </div>
+      <div class="score-stat-box">
+        <span class="stat-num">{{ evaluation.confidenceScore || 0 }}</span>
+        <span class="stat-name">Confidence</span>
+      </div>
+      <div class="score-stat-box">
+        <span class="stat-num">{{ evaluation.communicationScore || 0 }}</span>
+        <span class="stat-name">Communication</span>
+      </div>
+      <div class="score-stat-box">
+        <span class="stat-num">{{ evaluation.topicMasteryScore || 0 }}</span>
+        <span class="stat-name">Topic Mastery</span>
+      </div>
+    </div>
+
+    <div class="critique-content mt-16">
+      <h5>AI Feedback Critique</h5>
+      <p class="critique-text">{{ evaluation.feedback }}</p>
+    </div>
+  </div>
+
+  <!-- Pre-generated Model Answer Preview (Now Revealed!) -->
+  <div class="glass-card answer-reveal-card mt-16 border-green">
+    <div class="reveal-header">
+      <h5>💡 Model Answer &amp; Guidelines</h5>
+      <span class="badge badge-green">Revealed Preview</span>
+    </div>
+    <div class="reveal-body">
+      <h6>Ideal Expected Answer Outline:</h6>
+      <p class="ideal-answer-text">{{ evaluation.expectedAnswer || answerTemplate }}</p>
+      
+      <div class="learning-notes-box mt-12" *ngIf="evaluation.learningNotes">
+        <h6>UPSKILLING & LEARNING NOTES:</h6>
+        <p class="learning-notes-text">{{ evaluation.learningNotes }}</p>
+      </div>
+
+      <div class="key-concepts-box mt-12" *ngIf="evaluation.keyConcepts?.length">
+        <h6>Key Technical Concepts:</h6>
+        <div class="concept-tags-grid">
+          <span class="concept-tag" *ngFor="let c of evaluation.keyConcepts">{{ c }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

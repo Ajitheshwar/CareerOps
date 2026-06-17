@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AgentService } from '../../../services/agent.service';
+import { AgentService } from '../../../core/services/agent.service';
 
 @Component({
   selector: 'app-sidebar',

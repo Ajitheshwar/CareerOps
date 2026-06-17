@@ -1,6 +1,6 @@
 import { Component, inject, ViewChild, ElementRef, effect, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AgentService } from '../../../services/agent.service';
+import { AgentService } from '../../../core/services/agent.service';
 
 @Component({
   selector: 'app-console',

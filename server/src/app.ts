@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import * as path from 'path';
 import apiRouter from './routes';
-import { errorHandler } from './middlewares/error.middleware';
+import { errorHandler } from './shared/middlewares/error.middleware';
 
 const app = express();
 

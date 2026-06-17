@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatchResult } from '../../../types';
+import { MatchResult } from '../../../core/types';
 
 @Component({
   selector: 'app-match-evaluation',

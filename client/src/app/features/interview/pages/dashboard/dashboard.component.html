@@ -1,0 +1,190 @@
+<!-- client/src/app/features/interview/pages/dashboard/dashboard.component.html -->
+<div class="dashboard-wrapper font-main fade-in" *ngIf="!isLoading(); else loadingBlock">
+
+  <!-- Header Section -->
+  <header class="dashboard-header-row">
+    <div>
+      <button (click)="goBack()" class="btn btn-secondary back-btn">
+        ← Back to Job Details
+      </button>
+      <h2 class="mt-8">Interview Readiness Dashboard</h2>
+      <p>Continuous AI-evaluated readiness feedback aggregated across match profiles and mock rounds.</p>
+    </div>
+    <button (click)="forceRecalculate()" class="btn btn-accent" [disabled]="isRecalculating() || !jobId()">
+      <span class="spinner" *ngIf="isRecalculating()"></span>
+      <span>{{ isRecalculating() ? 'Recalculating...' : '🔄 Recalculate Readiness' }}</span>
+    </button>
+  </header>
+
+  <!-- Empty State if no job context -->
+  <div class="glass-card text-center mt-24 padding-40" *ngIf="!jobId()">
+    <h3>No Target Job Selected</h3>
+    <p class="mt-8">Please select a job in the Target Matches portal to load details and establish an Interview Readiness analysis.</p>
+    <button [routerLink]="['/matches']" class="btn btn-primary mt-16">
+      Explore Job Matches
+    </button>
+  </div>
+
+  <div class="dashboard-body-grid mt-24" *ngIf="jobId() && readiness() as rd">
+    
+    <!-- Top Row Panel: Main Gauge & Category Breakdown Chart -->
+    <div class="dashboard-stats-card glass-card">
+      <div class="main-gauge-box">
+        <app-readiness-ring [value]="rd.overallReadiness" size="lg"></app-readiness-ring>
+      </div>
+
+      <div class="categories-scales-box">
+        <h4>Round Domains Breakdown</h4>
+        
+        <div class="scale-item mt-16">
+          <div class="scale-header">
+            <span>🛡️ Resume Defense</span>
+            <span>{{ rd.resumeDefenseReadiness }}%</span>
+          </div>
+          <div class="scale-bar-bg">
+            <div class="scale-bar-fill purple" [style.width.%]="rd.resumeDefenseReadiness"></div>
+          </div>
+        </div>
+
+        <div class="scale-item mt-12">
+          <div class="scale-header">
+            <span>💻 Technical Readiness</span>
+            <span>{{ rd.technicalReadiness }}%</span>
+          </div>
+          <div class="scale-bar-bg">
+            <div class="scale-bar-fill cyan" [style.width.%]="rd.technicalReadiness"></div>
+          </div>
+        </div>
+
+        <div class="scale-item mt-12">
+          <div class="scale-header">
+            <span>🏗️ System Design</span>
+            <span>{{ rd.systemDesignReadiness }}%</span>
+          </div>
+          <div class="scale-bar-bg">
+            <div class="scale-bar-fill blue" [style.width.%]="rd.systemDesignReadiness"></div>
+          </div>
+        </div>
+
+        <div class="scale-item mt-12">
+          <div class="scale-header">
+            <span>🤝 Behavioral Prep</span>
+            <span>{{ rd.behavioralReadiness }}%</span>
+          </div>
+          <div class="scale-bar-bg">
+            <div class="scale-bar-fill green" [style.width.%]="rd.behavioralReadiness"></div>
+          </div>
+        </div>
+
+        <div class="scale-item mt-12">
+          <div class="scale-header">
+            <span>👑 Hiring Manager</span>
+            <span>{{ rd.hiringManagerReadiness }}%</span>
+          </div>
+          <div class="scale-bar-bg">
+            <div class="scale-bar-fill gold" [style.width.%]="rd.hiringManagerReadiness"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Strengths vs. Weaknesses Grid -->
+    <div class="strengths-gaps-grid mt-24">
+      <div class="glass-card flex-1">
+        <h4 class="text-green">⚡ Strong Competencies</h4>
+        <p class="section-desc">Topics you structured and answered with high depth and topic mastery scores.</p>
+        <ul class="dashboard-list mt-12">
+          <li *ngFor="let strength of rd.strengths">
+            <span class="list-bullet bullet-green">✓</span>
+            {{ strength }}
+          </li>
+          <li *ngIf="!rd.strengths?.length" class="text-muted text-center py-12">
+            Practice more rounds to record demonstrated strengths.
+          </li>
+        </ul>
+      </div>
+
+      <div class="glass-card flex-1">
+        <h4 class="text-rose">⚠️ Growth Gaps</h4>
+        <p class="section-desc">Skills needing attention based on matching gaps or mock score drops.</p>
+        <ul class="dashboard-list mt-12">
+          <li *ngFor="let weak of rd.weakAreas">
+            <span class="list-bullet bullet-rose">✕</span>
+            {{ weak }}
+          </li>
+          <li *ngIf="!rd.weakAreas?.length" class="text-muted text-center py-12">
+            No critical gaps recorded. Keep up the high score rounds!
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Learning & Practice Guidelines -->
+    <div class="learning-action-row mt-24">
+      <div class="glass-card flex-1">
+        <h4>📚 Recommended Learning focus</h4>
+        <p class="section-desc">Upskill topics identified as knowledge gaps or skipped topics.</p>
+        <div class="concept-tags-grid mt-12">
+          <span class="concept-tag" *ngFor="let item of rd.recommendedLearningAreas">{{ item }}</span>
+          <span *ngIf="!rd.recommendedLearningAreas?.length" class="text-muted">No topics flagged. Practice more questions to map gaps.</span>
+        </div>
+      </div>
+
+      <div class="glass-card next-round-recommendation-card border-purple flex-1">
+        <h4>⚔️ Recommended practice target</h4>
+        <p class="section-desc">The dynamic engine recommends starting this round to balance scores.</p>
+        <div class="recommendation-content mt-12">
+          <span class="recommendation-badge">{{ getRoundLabel(rd.recommendedNextPracticeRound || 'technical') }}</span>
+          <button (click)="goBack()" class="btn btn-primary btn-sm mt-12">
+            Open Practice Arena
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attempt logs and trends -->
+    <div class="attempts-history-card glass-card mt-24">
+      <h4>Active Practice Sessions History</h4>
+      <p class="section-desc">Resume your incomplete rounds or review past grades.</p>
+      
+      <div class="sessions-table-wrapper mt-16">
+        <div class="sessions-table-header">
+          <span class="col-head">Round Domain</span>
+          <span class="col-head">Progress</span>
+          <span class="col-head">Status</span>
+          <span class="col-head">Action</span>
+        </div>
+        <div class="sessions-table-row" *ngFor="let s of sessions()">
+          <span class="col-cell text-white font-weight-semibold">{{ getRoundLabel(s.type) }}</span>
+          <span class="col-cell">
+            <span class="progress-indicator">{{ s.progress }}%</span>
+          </span>
+          <span class="col-cell">
+            <span class="badge" [class.badge-cyan]="s.status === 'active'" [class.badge-green]="s.status === 'completed'">
+              {{ s.status === 'active' ? 'In Progress' : 'Completed' }}
+            </span>
+          </span>
+          <span class="col-cell">
+            <button (click)="resumeSession(s.id)" class="btn btn-secondary btn-sm">
+              {{ s.status === 'active' ? 'Resume Arena' : 'Review Outcomes' }}
+            </button>
+          </span>
+        </div>
+        <div *ngIf="sessions().length === 0" class="text-center py-24 text-muted">
+          No practice attempts logged for this role. Open Job Details to launch round setups!
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Loader Block overlay -->
+<ng-template #loadingBlock>
+  <div class="loader-wrapper text-center font-main fade-in">
+    <div class="loader-circle"></div>
+    <h4>Loading Interview Readiness Dashboard...</h4>
+    <p>Calculating overall performance trends, demonstrated strengths, and matching gaps...</p>
+  </div>
+</ng-template>

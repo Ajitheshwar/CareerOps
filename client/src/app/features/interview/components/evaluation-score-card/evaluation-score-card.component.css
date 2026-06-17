@@ -1,0 +1,133 @@
+.workspace-outcome-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Evaluation Score card */
+.evaluation-score-card {
+  padding: 24px;
+  background: radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.06), transparent 50%);
+}
+
+.score-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.overall-badge-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  padding: 6px 16px;
+  border-radius: 12px;
+}
+
+.overall-label {
+  font-size: 0.65rem;
+  color: var(--accent-purple);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.overall-score {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.scores-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .scores-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.score-stat-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-num {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.stat-name {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.critique-content h5,
+.reveal-header h5,
+.reveal-body h6 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.critique-text,
+.ideal-answer-text,
+.learning-notes-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+/* Pre-generated Answer Reveal */
+.answer-reveal-card {
+  padding: 24px;
+}
+
+.answer-reveal-card.border-green {
+  border-color: rgba(16, 185, 129, 0.2);
+  background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.05), transparent 50%);
+}
+
+.reveal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.concept-tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.concept-tag {
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border: 1px solid var(--border-color);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }

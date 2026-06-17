@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TailoredResume } from '../../../types';
+import { TailoredResume } from '../../../core/types';
 
 @Component({
   selector: 'app-resume-tailoring-details',

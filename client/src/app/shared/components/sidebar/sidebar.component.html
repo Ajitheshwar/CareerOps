@@ -71,6 +71,19 @@
 
     <a 
       class="nav-item" 
+      [routerLink]="agentService.selectedJobId() ? ['/interview/dashboard'] : null"
+      routerLinkActive="active"
+      [class.disabled]="!agentService.selectedJobId()"
+      [title]="isSidebarCollapsed() ? 'Interview Arena' : ''"
+    >
+      <span class="nav-icon">⚔️</span>
+      @if (!isSidebarCollapsed()) {
+        <span class="nav-label">Interview Arena</span>
+      }
+    </a>
+
+    <a 
+      class="nav-item" 
       [routerLink]="['/mentor']"
       routerLinkActive="active"
       [title]="isSidebarCollapsed() ? 'Mentor Chat' : ''"

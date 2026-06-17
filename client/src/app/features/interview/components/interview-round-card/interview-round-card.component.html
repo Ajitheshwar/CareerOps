@@ -1,0 +1,25 @@
+<div class="round-item-card glass-card">
+  <div class="card-title-row">
+    <span class="card-icon">{{ icon }}</span>
+    <div>
+      <h5>{{ label }}</h5>
+      <p>{{ description }}</p>
+    </div>
+  </div>
+  <div class="card-stats">
+    <span class="stat-indicator">Readiness: <strong>{{ readiness }}%</strong></span>
+    <span class="stat-indicator" *ngIf="session">
+      Progress: {{ session.progress }}% Completed
+    </span>
+  </div>
+  <div class="card-actions-row">
+    <ng-container *ngIf="session; else noSession">
+      <button *ngIf="session.status === 'active'" (click)="onContinue()" class="btn btn-primary btn-sm">Continue</button>
+      <button *ngIf="session.status === 'completed'" (click)="onRestart()" class="btn btn-secondary btn-sm">Archive & Restart</button>
+      <button *ngIf="session.status === 'active'" (click)="onRestart()" class="btn btn-secondary btn-sm text-rose">Restart</button>
+    </ng-container>
+    <ng-template #noSession>
+      <button (click)="onStart()" class="btn btn-accent btn-sm">Start Practice</button>
+    </ng-template>
+  </div>
+</div>

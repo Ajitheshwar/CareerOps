@@ -1,0 +1,139 @@
+<div class="modal-backdrop" (click)="onBackdropClick()">
+  <div class="modal-panel glass-card fade-in" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-icon">✍️</span>
+        <div>
+          <h3 class="modal-title">Add Job Manually</h3>
+          <p class="modal-subtitle">Get instant AI-powered match analysis for any role.</p>
+        </div>
+      </div>
+      <button
+        id="addJobModalClose"
+        class="btn-close"
+        (click)="onClose()"
+        [disabled]="isSubmitting()"
+        title="Close"
+      >✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      @if (errorMessage()) {
+        <div class="error-banner fade-in">
+          <span class="error-icon">⚠️</span>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="addJobTitle">
+            Job Title <span class="required">*</span>
+          </label>
+          <input
+            id="addJobTitle"
+            class="form-input"
+            type="text"
+            [(ngModel)]="form.title"
+            name="title"
+            placeholder="e.g. Senior Angular Engineer"
+            [disabled]="isSubmitting()"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addJobCompany">
+            Company <span class="required">*</span>
+          </label>
+          <input
+            id="addJobCompany"
+            class="form-input"
+            type="text"
+            [(ngModel)]="form.company"
+            name="company"
+            placeholder="e.g. TechCorp"
+            [disabled]="isSubmitting()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="addJobLocation">
+          Location <span class="optional">(optional)</span>
+        </label>
+        <input
+          id="addJobLocation"
+          class="form-input"
+          type="text"
+          [(ngModel)]="form.location"
+          name="location"
+          placeholder="e.g. Remote, Hyderabad IN"
+          [disabled]="isSubmitting()"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="addJobUrl">
+          Job Link <span class="required">*</span>
+        </label>
+        <input
+          id="addJobUrl"
+          class="form-input"
+          type="text"
+          [(ngModel)]="form.url"
+          name="url"
+          placeholder="e.g. https://linkedin.com/jobs/view/..."
+          [disabled]="isSubmitting()"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="addJobDescription">
+          Job Description <span class="required">*</span>
+        </label>
+        <textarea
+          id="addJobDescription"
+          class="form-input form-textarea"
+          [(ngModel)]="form.description"
+          name="description"
+          rows="9"
+          placeholder="Paste the full job description here — the more detail, the more accurate the match analysis."
+          [disabled]="isSubmitting()"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button
+        id="addJobModalCancel"
+        class="btn btn-secondary"
+        (click)="onClose()"
+        [disabled]="isSubmitting()"
+      >
+        Cancel
+      </button>
+      <button
+        id="addJobModalSave"
+        class="btn btn-primary"
+        (click)="onSave()"
+        [disabled]="!isFormValid || isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          <span class="spinner"></span>
+          <span>Analyzing Match...</span>
+        } @else {
+          <span>✨ Analyze &amp; Add Job</span>
+        }
+      </button>
+    </div>
+
+  </div>
+</div>

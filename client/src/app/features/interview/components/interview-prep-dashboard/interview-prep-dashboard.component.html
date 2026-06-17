@@ -1,0 +1,85 @@
+<div class="prep-dashboard-grid">
+  <!-- Left Panel: Aggregated Metrics -->
+  <div class="glass-card status-summary-card">
+    <div class="summary-header">
+      <h4>Preparation Summary</h4>
+      <span class="badge badge-purple">Adaptive Engine</span>
+    </div>
+    
+    <div class="readiness-meter-box">
+      <app-readiness-ring [value]="readiness?.overallReadiness || 0"></app-readiness-ring>
+    </div>
+
+    <div class="summary-stats">
+      <div class="stat-line">
+        <span class="stat-label">Resume Match Score</span>
+        <span class="stat-value text-accent">{{ details?.matchResult?.matchScore || 0 }}%</span>
+      </div>
+      <div class="stat-line">
+        <span class="stat-label">Target Role</span>
+        <span class="stat-value text-light">{{ details?.job?.title }}</span>
+      </div>
+      <div class="stat-line">
+        <span class="stat-label">Company</span>
+        <span class="stat-value text-light">{{ details?.job?.company }}</span>
+      </div>
+    </div>
+
+    <div class="strengths-box" *ngIf="readiness?.strengths?.length">
+      <h5>Core Strengths</h5>
+      <div class="tags-container">
+        <span class="tag-badge badge-green" *ngFor="let s of readiness?.strengths">{{ s }}</span>
+      </div>
+    </div>
+
+    <div class="action-box">
+      <button (click)="viewDashboard()" class="btn btn-primary w-100">
+        View Readiness Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- Right Panel: Rounds Arena -->
+  <div class="rounds-arena-box">
+    <div class="arena-header">
+      <h4>Practice Interview Rounds</h4>
+      <p>Choose an isolated skill domain to practice. Rounds adapt in real-time to your answers.</p>
+    </div>
+
+    <div class="rounds-grid">
+      <app-interview-round-card
+        *ngFor="let round of roundsConfig"
+        [type]="round.type"
+        [label]="round.label"
+        [description]="round.description"
+        [icon]="round.icon"
+        [readiness]="getRoundReadiness(round.type)"
+        [session]="getRoundSession(round.type)"
+        (start)="openSetupModal(round.type, round.label)"
+        (continue)="continueRoundPractice($event)"
+        (restart)="restartRoundPractice(round.type, round.label)"
+      ></app-interview-round-card>
+    </div>
+
+    <!-- Advanced Mock Practice Option -->
+    <div class="glass-card full-mock-card mt-24">
+      <div class="mock-info">
+        <h5>⚔️ Sequential Full Mock Interview Mode</h5>
+        <p>Runs all 5 rounds consecutively (Resume Defense → Technical → System Design → Behavioral → Hiring Manager) to compile a final readiness audit report.</p>
+      </div>
+      <button (click)="openSetupModal('full-mock', 'Full Mock')" class="btn btn-primary">
+        Start Mock Interview
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-session-setup-modal
+  [isOpen]="showSetupModal"
+  [roundType]="selectedRoundType"
+  [roundLabel]="selectedRoundLabel"
+  [jobDetails]="details"
+  [isStarting]="isStartingSession"
+  (close)="closeSetupModal()"
+  (start)="startRoundPractice($event)"
+></app-session-setup-modal>

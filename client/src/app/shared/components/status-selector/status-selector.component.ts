@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { JobListing } from '../../../types';
+import { JobListing } from '../../../core/types';
 
 @Component({
   selector: 'app-status-selector',

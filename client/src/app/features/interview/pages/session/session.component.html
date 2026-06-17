@@ -1,0 +1,255 @@
+<!-- client/src/app/features/interview/pages/session/session.component.html -->
+<div class="session-wrapper font-main fade-in" *ngIf="!isLoading(); else loadingBlock">
+
+  <!-- =====================================================
+     SIDE PANEL (Round Status & Navigation)
+     ===================================================== -->
+  <aside class="session-sidebar glass-card">
+    <div class="sidebar-header">
+      <span class="round-badge">Round Module</span>
+      <h3>{{ getRoundLabel(session()?.type || '') }}</h3>
+    </div>
+
+    <!-- Progress & Readiness Details -->
+    <div class="status-metrics-box">
+      <div class="metric-row">
+        <span class="metric-label">Round Progress</span>
+        <span class="metric-value">{{ roundProgress() }}%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" [style.width.%]="roundProgress()"></div>
+      </div>
+    </div>
+
+    <!-- Clickable Question Index Links -->
+    <div class="question-navigation-box">
+      <h5>Round Log History</h5>
+      <div class="questions-list">
+        <button 
+          *ngFor="let q of questions(); let i = index" 
+          class="nav-q-link"
+          [class.active]="activeQuestionIndex() === i"
+          [class.evaluated]="q.evaluation"
+          [class.skipped]="q.isSkipped"
+          [class.dont-know]="q.isDontKnow"
+          (click)="selectQuestionReview(i)"
+        >
+          <span class="q-number">Q{{ i + 1 }}</span>
+          <span class="q-status-text">
+            <ng-container *ngIf="q.isSkipped">Skipped</ng-container>
+            <ng-container *ngIf="q.isDontKnow">Gap Flagged</ng-container>
+            <ng-container *ngIf="q.evaluation && !q.isSkipped && !q.isDontKnow">
+              Score: {{ q.evaluation.score }}%
+            </ng-container>
+            <ng-container *ngIf="!q.evaluation && !q.isSkipped && !q.isDontKnow">
+              Active Question
+            </ng-container>
+          </span>
+          <span class="status-indicator-dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Manual Difficulty Request Box -->
+    <div class="difficulty-adjuster-box" *ngIf="!isReviewMode()">
+      <h5>Adjust Difficulty</h5>
+      <p class="section-desc">Override AI and manually steer the next question's complexity.</p>
+      <div class="adjuster-buttons">
+        <button (click)="adjustDifficulty('easier')" class="btn btn-secondary btn-sm flex-1">
+          📉 Simpler Question
+        </button>
+        <button (click)="adjustDifficulty('harder')" class="btn btn-secondary btn-sm flex-1">
+          📈 Harder Question
+        </button>
+      </div>
+    </div>
+
+    <!-- Topics covered / remaining list -->
+    <div class="topics-progress-box">
+      <h5>Topics Progression</h5>
+      <div class="topics-status-list">
+        <div class="topic-item-line" *ngFor="let topic of session()?.config?.focus">
+          <span class="topic-dot"></span>
+          <span class="topic-title">{{ topic }}</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =====================================================
+     MAIN WORKSPACE AREA
+     ===================================================== -->
+  <main class="session-main">
+    <!-- Header Controls -->
+    <header class="workspace-header">
+      <button (click)="goBack()" class="btn btn-secondary back-btn">
+        ← Exit Round
+      </button>
+      <div class="workspace-status" *ngIf="roundCompleted()">
+        <span class="badge badge-green">Round Completed</span>
+      </div>
+    </header>
+
+    <!-- Round Complete Summary Mode -->
+    <div class="glass-card round-complete-card text-center fade-in" *ngIf="roundCompleted() && activeQuestionIndex() === questions().length - 1">
+      <span class="complete-trophy">🏆</span>
+      <h3>Practice Round Completed!</h3>
+      <p class="round-msg">{{ roundMessage() || 'You have successfully practiced the objectives of this round.' }}</p>
+      <p>The adaptive engine has calculated your session outcomes and updated your readiness snapshot dashboard.</p>
+      
+      <div class="complete-actions mt-24">
+        <button (click)="goBack()" class="btn btn-primary">
+          Return to Job Dashboard
+        </button>
+      </div>
+    </div>
+
+    <!-- Normal Question / Terminal Mode -->
+    <div class="workspace-body" *ngIf="activeQuestion() as q">
+      
+      <!-- Review Mode Alert Bar -->
+      <div class="review-banner fade-in" *ngIf="isReviewMode() && !roundCompleted()">
+        <span>👀 You are in <strong>Review Mode</strong> inspecting a past response.</span>
+        <button (click)="advanceNextQuestion()" class="btn btn-accent btn-sm">
+          Return to Active Question →
+        </button>
+      </div>
+
+      <!-- Question Box -->
+      <div class="glass-card question-card">
+        <div class="card-meta">
+          <span class="badge badge-cyan">Question {{ activeQuestionIndex() + 1 }}</span>
+          <span class="card-topic" *ngIf="q.tips">Topic: {{ q.tips }}</span>
+        </div>
+        <h4>{{ q.question }}</h4>
+
+        <div class="hint-container mt-12" *ngIf="!isReviewMode()">
+          <button (click)="getHint()" class="btn btn-secondary btn-sm" [disabled]="showHint()">
+            💡 Need a hint?
+          </button>
+          <div class="hint-bubble fade-in mt-8" *ngIf="showHint()">
+            <span class="hint-icon">🔍</span>
+            <p>{{ hintText() }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interaction Box: Input Terminal & Controls (Active Mode) -->
+      <div class="glass-card terminal-card mt-16" *ngIf="!isReviewMode() && !q.evaluation">
+        <div class="terminal-header">
+          <span class="header-indicator red"></span>
+          <span class="header-indicator yellow"></span>
+          <span class="header-indicator green"></span>
+          <span class="terminal-title">INTERVIEWEE_TERMINAL:~</span>
+        </div>
+        
+        <textarea 
+          [(ngModel)]="userAnswer" 
+          name="userAnswer"
+          class="terminal-textarea"
+          placeholder="Type your structured answer here... (use markdown syntax if needed)"
+          rows="10"
+          [disabled]="isSubmitting()"
+        ></textarea>
+
+        <!-- Rating controls questionnaire -->
+        <div class="feedback-inputs-box">
+          <h5 class="inputs-title">Rate this Question</h5>
+          <div class="inputs-grid">
+            
+            <div class="input-item">
+              <label class="form-label">Difficulty</label>
+              <select [(ngModel)]="difficultyRating" name="diff" class="form-input select-sm">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+
+            <div class="input-item">
+              <label class="form-label">Relevance</label>
+              <select [(ngModel)]="relevanceRating" name="rel" class="form-input select-sm">
+                <option value="relevant">Relevant</option>
+                <option value="somewhat">Somewhat Relevant</option>
+                <option value="not-relevant">Not Relevant</option>
+              </select>
+            </div>
+
+            <div class="input-item">
+              <label class="form-label">Clarity</label>
+              <select [(ngModel)]="clarityRating" name="clar" class="form-input select-sm">
+                <option value="clear">Clear</option>
+                <option value="somewhat">Somewhat Clear</option>
+                <option value="confusing">Confusing</option>
+              </select>
+            </div>
+
+            <div class="input-item">
+              <label class="form-label">Confidence (Before)</label>
+              <select [(ngModel)]="confidenceBefore" name="confB" class="form-input select-sm">
+                <option [value]="1">1 - Very Low</option>
+                <option [value]="2">2 - Low</option>
+                <option [value]="3">3 - Medium</option>
+                <option [value]="4">4 - High</option>
+                <option [value]="5">5 - Excellent</option>
+              </select>
+            </div>
+
+            <div class="input-item">
+              <label class="form-label">Confidence (After)</label>
+              <select [(ngModel)]="confidenceAfter" name="confA" class="form-input select-sm">
+                <option [value]="1">1 - Very Low</option>
+                <option [value]="2">2 - Low</option>
+                <option [value]="3">3 - Medium</option>
+                <option [value]="4">4 - High</option>
+                <option [value]="5">5 - Excellent</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="terminal-footer">
+          <div class="footer-left">
+            <button (click)="submitDontKnow()" class="btn btn-secondary" [disabled]="isSubmitting()">
+              🤷 I Don't Know
+            </button>
+            <button (click)="submitSkip()" class="btn btn-secondary text-rose" [disabled]="isSubmitting()">
+              ⏭️ Skip Topic
+            </button>
+          </div>
+          <button (click)="submitAnswer()" class="btn btn-primary" [disabled]="isSubmitting() || !userAnswer.trim()">
+            <span class="spinner" *ngIf="isSubmitting()"></span>
+            <span>{{ isSubmitting() ? 'AI is Evaluating...' : '✨ Submit Response' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Evaluation & Model Answer Preview Card (Renders once graded / in Review Mode) -->
+      <app-evaluation-score-card
+        *ngIf="q.evaluation"
+        [evaluation]="q.evaluation"
+        [answerTemplate]="q.answerTemplate"
+        class="mt-16 block"
+      ></app-evaluation-score-card>
+
+        <!-- Pipelined Next Question Navigation button -->
+        <div class="next-action-row mt-24 text-right" *ngIf="!isReviewMode() && !roundCompleted()">
+          <button (click)="advanceNextQuestion()" class="btn btn-primary btn-lg">
+            Next Adapted Question ➔
+          </button>
+        </div>
+
+      </div>
+
+  </main>
+</div>
+
+<!-- Loading State Spinner -->
+<ng-template #loadingBlock>
+  <div class="loader-wrapper text-center font-main fade-in">
+    <div class="loader-circle"></div>
+    <h4>Initializing Round Practice Terminal...</h4>
+    <p>Assembling candidate resume, match scores, and difficulty parameters to generate adaptive context...</p>
+  </div>
+</ng-template>

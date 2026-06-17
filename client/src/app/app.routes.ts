@@ -15,43 +15,53 @@ export const routes: Routes = [
       },
       {
         path: 'profile',
-        loadComponent: () => import('./features/profile/profile.component').then(m => m.UserProfileComponent),
+        loadComponent: () => import('./features/profile/pages/profile/profile.component').then(m => m.UserProfileComponent),
         title: 'Profile & Resume | CareerOps AI'
       },
       {
         path: 'matches',
-        loadComponent: () => import('./features/matches/matches.component').then(m => m.JobMatchesComponent),
+        loadComponent: () => import('./features/matches/pages/matches/matches.component').then(m => m.JobMatchesComponent),
         title: 'Target Matches | CareerOps AI'
       },
       {
         path: 'tailor',
-        loadComponent: () => import('./features/tailor/tailor.component').then(m => m.ResumeTailorComponent),
+        loadComponent: () => import('./features/tailor/pages/tailor/tailor.component').then(m => m.ResumeTailorComponent),
         title: 'Resume Customizer | CareerOps AI'
       },
       {
         path: 'coach',
-        loadComponent: () => import('./features/coach/coach.component').then(m => m.InterviewCoachComponent),
+        loadComponent: () => import('./features/coach/pages/coach/coach.component').then(m => m.InterviewCoachComponent),
         title: 'Interview Coach | CareerOps AI'
       },
       {
         path: 'mentor',
-        loadComponent: () => import('./features/mentor/mentor.component').then(m => m.MentorChatComponent),
+        loadComponent: () => import('./features/mentor/pages/mentor/mentor.component').then(m => m.MentorChatComponent),
         title: 'Career Mentor Chat | CareerOps AI'
       },
       {
         path: 'tracker',
-        loadComponent: () => import('./features/tracker/tracker.component').then(m => m.JobTrackerComponent),
+        loadComponent: () => import('./features/tracker/pages/tracker/tracker.component').then(m => m.JobTrackerComponent),
         title: 'Application Pipeline | CareerOps AI'
       },
       {
         path: 'analytics',
-        loadComponent: () => import('./features/analytics/analytics.component').then(m => m.InterviewAnalyticsComponent),
+        loadComponent: () => import('./features/analytics/pages/analytics/analytics.component').then(m => m.InterviewAnalyticsComponent),
         title: 'Interview Analytics | CareerOps AI'
       },
       {
         path: 'jobs/:id',
-        loadComponent: () => import('./features/job-details/job-details.component').then(m => m.JobDetailsComponent),
+        loadComponent: () => import('./features/job-details/pages/job-details/job-details.component').then(m => m.JobDetailsComponent),
         title: 'Job Details | CareerOps AI'
+      },
+      {
+        path: 'interview/dashboard',
+        loadComponent: () => import('./features/interview/pages/dashboard/dashboard.component').then(m => m.InterviewDashboardComponent),
+        title: 'Interview Readiness | CareerOps AI'
+      },
+      {
+        path: 'interview/session/:id',
+        loadComponent: () => import('./features/interview/pages/session/session.component').then(m => m.InterviewSessionComponent),
+        title: 'Interview Session | CareerOps AI'
       }
     ]
   },

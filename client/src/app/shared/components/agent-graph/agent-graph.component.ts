@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AgentService } from '../../../services/agent.service';
+import { AgentService } from '../../../core/services/agent.service';
 
 interface GraphNode {
   id: string;

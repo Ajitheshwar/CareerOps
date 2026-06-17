@@ -1,0 +1,66 @@
+<div class="modal-backdrop fade-in" *ngIf="isOpen">
+  <div class="modal-panel glass-card font-main" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-icon">⚙️</span>
+        <div>
+          <h3 class="modal-title">Configure {{ roundLabel }} Round</h3>
+          <p class="modal-subtitle">Define focus areas and difficulty for your practice session.</p>
+        </div>
+      </div>
+      <button class="btn-close" (click)="close.emit()" [disabled]="isStarting">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Difficulty Selection -->
+      <div class="form-group">
+        <label class="form-label">Starting Difficulty</label>
+        <div class="difficulty-toggle-row">
+          <button 
+            type="button" 
+            class="btn-toggle" 
+            [class.active]="setupDifficulty === 'beginner'"
+            (click)="setupDifficulty = 'beginner'"
+          >Beginner</button>
+          <button 
+            type="button" 
+            class="btn-toggle" 
+            [class.active]="setupDifficulty === 'intermediate'"
+            (click)="setupDifficulty = 'intermediate'"
+          >Intermediate</button>
+          <button 
+            type="button" 
+            class="btn-toggle" 
+            [class.active]="setupDifficulty === 'advanced'"
+            (click)="setupDifficulty = 'advanced'"
+          >Advanced</button>
+        </div>
+      </div>
+
+      <!-- Focus Topics Checkboxes -->
+      <div class="form-group" style="margin-top: 20px;">
+        <label class="form-label">Select Focus Topics</label>
+        <p class="section-desc">Gaps identified by comparing your resume with the job requirements are pre-selected.</p>
+        <div class="topics-checkboxes-grid">
+          <div 
+            class="topic-checkbox-item" 
+            *ngFor="let topic of availableTopics"
+            [class.checked]="isTopicSelected(topic)"
+            (click)="toggleTopic(topic)"
+          >
+            <span class="checkbox-box">{{ isTopicSelected(topic) ? '✓' : '' }}</span>
+            <span class="topic-name">{{ topic }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="close.emit()" [disabled]="isStarting">Cancel</button>
+      <button class="btn btn-primary" (click)="onSubmit()" [disabled]="isStarting">
+        <span class="spinner" *ngIf="isStarting"></span>
+        <span>{{ isStarting ? 'Launching Session...' : '🚀 Launch Round Workspace' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
