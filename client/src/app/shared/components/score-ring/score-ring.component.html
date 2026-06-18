@@ -1,13 +1,13 @@
-<div class="score-ring-wrapper" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+<div class="score-ring-wrapper" style="position: relative">
   <div class="progress-ring-container">
-    <svg width="64" height="64" class="progress-svg">
-      <circle class="circle-bg" cx="32" cy="32" r="26" />
+    <svg width="96" height="96" class="progress-svg">
+      <circle class="circle-bg" cx="48" cy="48" r="40" />
       <circle 
         class="circle-fg" 
         [ngClass]="getScoreColorClass(score)"
-        cx="32" 
-        cy="32" 
-        r="26" 
+        cx="48" 
+        cy="48" 
+        r="40" 
         [style.strokeDashoffset]="calculateOffset(score)"
       />
     </svg>
@@ -15,14 +15,12 @@
       {{ score !== null && score !== undefined ? score + '%' : '--' }}
     </span>
   </div>
-  @if (score === null || score === undefined) {
-    <button 
-      class="btn-rerun"
-      (click)="onReRunClick($event)"
-      [disabled]="isAnalyzing"
-      title="Re-run analysis for this job"
-    >
-      {{ isAnalyzing ? '⏳ Analyzing...' : '🔄 Re-run' }}
-    </button>
-  }
+  <button 
+    class="btn-rerun"
+    (click)="onReRunClick($event)"
+    [disabled]="isAnalyzing"
+    title="Re-run analysis for this job"
+  >
+    {{ isAnalyzing ? '⏳' : '🔄' }}
+  </button>
 </div>

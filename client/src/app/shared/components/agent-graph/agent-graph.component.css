@@ -154,7 +154,7 @@ h3 {
 .agent-drawer {
   position: fixed;
   top: 0;
-  right: -450px;
+  left: -450px;
   width: 450px;
   height: 100vh;
   /* background: rgba(10, 15, 30, 0.96); */
@@ -163,11 +163,11 @@ h3 {
   z-index: 2000;
   padding: var(--spacing-lg) var(--spacing-md);
   overflow-y: auto;
-  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(20px);
 }
 .agent-drawer.open {
-  right: 0;
+  left: 0;
 }
 .btn-close-drawer {
   background: none;
@@ -189,7 +189,7 @@ h3 {
 .floating-trigger-btn {
   position: fixed;
   bottom: 100px;
-  right: 20px;
+  left: 20px;
   z-index: 1001; /* High enough but below drawer backdrop */
   display: flex;
   align-items: center;

@@ -22,8 +22,8 @@ export class ScoreRingComponent {
   }
 
   calculateOffset(score: number | null | undefined): number {
-    const radius = 26;
-    const circumference = 2 * Math.PI * radius; // ~163.36
+    const radius = 40;
+    const circumference = 2 * Math.PI * radius;
     if (score === null || score === undefined) return circumference;
     return circumference - (score / 100) * circumference;
   }

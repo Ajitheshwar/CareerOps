@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TailoredResume } from '../../../core/types';
 
@@ -11,4 +11,9 @@ import { TailoredResume } from '../../../core/types';
 })
 export class ResumeTailoringDetailsComponent {
   @Input() tailoredResume: TailoredResume | null | undefined = null;
+
+  copyText(text: string) {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+  }
 }

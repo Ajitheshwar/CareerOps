@@ -165,8 +165,10 @@
 
 <!-- Add Job Modal -->
 @if (showAddJobModal()) {
-  <app-add-job-modal
+  <app-job-form-modal
+    mode="add"
     (saved)="onAddJobSaved()"
     (close)="onAddJobModalClose()"
-  ></app-add-job-modal>
+  ></app-job-form-modal>
 }
+

@@ -1,7 +1,7 @@
 .progress-ring-container {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,9 +19,9 @@
 
 .circle-fg {
   fill: none;
-  stroke-width: 4px;
+  stroke-width: 6px;
   stroke-linecap: round;
-  stroke-dasharray: 163.36; /* 2 * pi * r (r=26) */
+  stroke-dasharray: 251.33; /* 2 * pi * r (r=40) */
   transition: stroke-dashoffset 0.5s ease;
 }
 
@@ -43,24 +43,24 @@
 .progress-ring-text.gray { color: #9ca3af; }
 
 .btn-rerun {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: none;
+  border: none;
   border-radius: 6px;
   color: #e5e7eb;
-  padding: 4px 10px;
-  font-size: 0.75rem;
+  padding: 0;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s ease;
   font-family: var(--font-main);
   outline: none;
 }
 
 .btn-rerun:hover:not(:disabled) {
-  background: rgba(6, 182, 212, 0.15);
-  border-color: rgba(6, 182, 212, 0.3);
-  color: var(--accent-cyan);
-  box-shadow: 0 0 8px rgba(6, 182, 212, 0.15);
+  scale: 1.2;
 }
 
 .btn-rerun:disabled {

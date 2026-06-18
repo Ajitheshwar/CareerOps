@@ -1,6 +1,5 @@
 import { Component, inject, signal, OnInit, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AgentService } from '../../../../core/services/agent.service';
 import { HistoricalJob, JobListing } from '../../../../core/types';
@@ -14,23 +13,24 @@ import { CoverLetterDraftComponent } from '../../../../shared/components/cover-l
 import { InterviewCoachPracticeComponent } from '../../../../shared/components/interview-coach-practice/interview-coach-practice.component';
 import { InterviewApiService, InterviewSession, ReadinessScore } from '../../../interview/services/interview-api.service';
 import { InterviewPrepDashboardComponent } from '../../../interview/components/interview-prep-dashboard/interview-prep-dashboard.component';
+import { JobFormModalComponent, JobFormValues } from '../../../../shared/components/job-form-modal/job-form-modal.component';
 
 @Component({
   selector: 'app-job-details',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule,
-    RouterLink, 
-    EmptyStateComponent, 
-    FilterTabsComponent, 
-    ScoreRingComponent, 
-    MatchEvaluationComponent, 
+    CommonModule,
+    RouterLink,
+    EmptyStateComponent,
+    FilterTabsComponent,
+    ScoreRingComponent,
+    MatchEvaluationComponent,
     StatusSelectorComponent,
     ResumeTailoringDetailsComponent,
     CoverLetterDraftComponent,
     InterviewCoachPracticeComponent,
-    InterviewPrepDashboardComponent
+    InterviewPrepDashboardComponent,
+    JobFormModalComponent
   ],
   templateUrl: './job-details.component.html',
   styleUrls: ['./job-details.component.css']
@@ -44,6 +44,12 @@ export class JobDetailsComponent implements OnInit {
   jobDetails = signal<HistoricalJob | null>(null);
   activeTab = signal<string>('overview');
   isAnalyzing = signal<boolean>(false);
+
+  // Edit Job Modal
+  showEditModal = signal<boolean>(false);
+
+  /** Snapshot of the current job pre-populated into the form */
+  editInitialValues = signal<Partial<JobFormValues>>({});
 
   async onReRunAnalysis(event: Event) {
     event.stopPropagation();
@@ -143,6 +149,49 @@ export class JobDetailsComponent implements OnInit {
     await this.loadJob();
   }
 
+  openEditModal() {
+    const job = this.jobDetails()?.job;
+    if (!job) return;
+    this.editInitialValues.set({
+      title: job.title || '',
+      company: job.company || '',
+      location: job.location || '',
+      salary: job.salary || '',
+      url: job.url || '',
+      description: job.description || ''
+    });
+    this.showEditModal.set(true);
+  }
+
+  async onEditSave(values: JobFormValues) {
+    try {
+      const updated = await this.agentService.updateJob(this.jobId(), {
+        title: values.title,
+        company: values.company,
+        location: values.location,
+        salary: values.salary,
+        url: values.url,
+        description: values.description
+      });
+      if (updated) {
+        // The backend clears AI-generated materials on edit — mirror that locally
+        // so empty-state UI appears immediately without a page refresh.
+        this.jobDetails.set({
+          ...updated,
+          tailoredResume: undefined,
+          coverLetter: undefined,
+          interviewPrep: undefined
+        });
+      }
+      // Reset interview readiness & sessions — they're tied to the old description
+      this.readiness.set(null);
+      this.sessions.set([]);
+      this.showEditModal.set(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save changes.');
+    }
+  }
+
   async runTailoring() {
     this.agentService.selectJob(this.jobId());
     await this.agentService.startTailoring(this.jobId());
@@ -151,6 +200,15 @@ export class JobDetailsComponent implements OnInit {
   async runPrep() {
     this.agentService.selectJob(this.jobId());
     await this.agentService.startInterviewPrep(this.jobId());
+  }
+
+  async onDeleteJob() {
+    const confirmed = confirm(
+      'Are you sure you want to hide this job? It will be excluded from future crawlers and search queries.'
+    );
+    if (!confirmed) return;
+    await this.agentService.deleteJob(this.jobId());
+    this.router.navigate(['/matches']);
   }
 
   goBack() {

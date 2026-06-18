@@ -536,6 +536,30 @@ export class AgentService {
   }
 
   /**
+   * Update editable fields of an existing job posting
+   */
+  async updateJob(jobId: string, updates: Partial<Pick<Job, 'title' | 'company' | 'location' | 'description' | 'url' | 'salary'>>): Promise<HistoricalJob | null> {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to update job.');
+    }
+    const updated: HistoricalJob = await res.json();
+
+    // Sync the foundJobs list in state
+    this.stateSignal.update(curr => ({
+      ...curr,
+      foundJobs: curr.foundJobs.map(j => j.id === jobId ? { ...j, ...updates } : j)
+    }));
+
+    return updated;
+  }
+
+  /**
    * Update tracking status for job listing
    */
   async updateJobStatus(id: string, status: JobListing['status']) {

@@ -8,7 +8,11 @@
         <p class="summary-text">{{ tailoredResume.originalSummary }}</p>
       </div>
       <div class="comp-box active">
-        <span class="comp-label tailored">Tailored Summary Suggestion</span>
+        <span class="comp-label tailored">Tailored Summary Suggestion
+          <span (click)="copyText(tailoredResume.tailoredSummary)" style="cursor: pointer;">
+            🗐
+          </span>
+        </span>
         <p class="summary-text">{{ tailoredResume.tailoredSummary }}</p>
       </div>
     </div>
@@ -30,7 +34,11 @@
             <p class="bullet-desc">❌ "{{ change.original }}"</p>
           </div>
           <div class="comp-box active">
-            <span class="comp-label tailored">With tailored version</span>
+            <span class="comp-label tailored">With tailored version 
+              <span (click)="copyText(change.tailored)" style="cursor: pointer;">
+            🗐
+            </span>
+            </span>
             <p class="bullet-desc green-text">✅ "{{ change.tailored }}"</p>
           </div>
         </div>

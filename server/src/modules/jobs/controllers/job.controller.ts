@@ -94,6 +94,30 @@ export class JobController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  static async updateJob(req: Request, res: Response) {
+    const { id } = req.params;
+    const { title, company, location, description, url, salary } = req.body;
+    const updates: any = {};
+    if (title !== undefined) updates.title = title;
+    if (company !== undefined) updates.company = company;
+    if (location !== undefined) updates.location = location;
+    if (description !== undefined) updates.description = description;
+    if (url !== undefined) updates.url = url;
+    if (salary !== undefined) updates.salary = salary;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No updatable fields provided.' });
+    }
+
+    try {
+      const updated = await JobService.updateJobFields(id, updates);
+      if (!updated) return res.status(404).json({ error: 'Job not found.' });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
 }
 
 

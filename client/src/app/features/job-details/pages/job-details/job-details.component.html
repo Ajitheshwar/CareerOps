@@ -15,22 +15,36 @@
 
   <!-- Main Details Header -->
   <div class="glass-card main-header-card">
-    <div class="header-left">
-      <span class="source-tag">{{ details.job.source }}</span>
-      <h2>{{ details.job.title }}</h2>
-      <h3>{{ details.job.company }}</h3>
-      <div class="job-metadata">
-        <span class="meta-item">📍 {{ details.job.location }}</span>
-        <span class="meta-item" *ngIf="details.job.salary">💵 {{ details.job.salary }}</span>
-        <span class="meta-item" *ngIf="details.job.date">📅 Crawled: {{ details.job.date | date:'mediumDate' }}</span>
+    <div class="header-main-row">
+      <div class="header-left">
+        <span class="source-tag">{{ details.job.source }}</span>
+        <h2>{{ details.job.title }}</h2>
+        <h3>{{ details.job.company }}</h3>
+        <div class="job-metadata">
+          <span class="meta-item">📍 {{ details.job.location }}</span>
+          <span class="meta-item" *ngIf="details.job.salary">💵 {{ details.job.salary }}</span>
+          <span class="meta-item" *ngIf="details.job.date">📅 Crawled: {{ details.job.date | date:'mediumDate' }}</span>
+        </div>
       </div>
-    </div>
-    <div class="header-right" *ngIf="details.job.url">
-      <a [href]="details.job.url" target="_blank" class="btn btn-primary original-link-btn">
-        View Original Posting ↗
-      </a>
-    </div>
+      <!-- Top-right: Edit + Delete -->
+      <div class="header-actions">
+        <div class="edit-delete">
+          <button (click)="openEditModal()" class="btn btn-secondary action-btn" title="Edit job details">
+          ✏️ Edit
+        </button>
+        <button (click)="onDeleteJob()" class="btn btn-danger action-btn" title="Soft-delete this job">
+          🗑 Delete
+        </button>
+        </div>
+        <div class="header-footer-row" *ngIf="details.job.url">
+          <a [href]="details.job.url" target="_blank" class="btn btn-primary original-link-btn">
+            View Original Posting ↗
+          </a>
+        </div>
+      </div>
+    </div>   
   </div>
+
 
   <!-- Detail Tabs Navigation -->
   <div class="details-tabs-row" style="margin-top: 10px; margin-bottom: 8px;">
@@ -153,3 +167,12 @@
   </div>
 </div>
 
+<!-- Edit Job Modal — uses the shared JobFormModalComponent in edit mode -->
+@if (showEditModal()) {
+  <app-job-form-modal
+    mode="edit"
+    [initialValues]="editInitialValues()"
+    (editSave)="onEditSave($event)"
+    (close)="showEditModal.set(false)"
+  ></app-job-form-modal>
+}

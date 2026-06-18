@@ -1,0 +1,175 @@
+<div class="modal-backdrop" (click)="onBackdropClick()">
+  <div class="modal-panel glass-card fade-in" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-icon">{{ isEdit ? '✏️' : '✍️' }}</span>
+        <div>
+          <h3 class="modal-title">{{ isEdit ? 'Edit Job Details' : 'Add Job Manually' }}</h3>
+          <p class="modal-subtitle">
+            {{ isEdit
+                ? 'Update the job information below. Saved edits will clear existing AI materials.'
+                : 'Get instant AI-powered match analysis for any role.' }}
+          </p>
+        </div>
+      </div>
+      <button
+        id="jobFormModalClose"
+        class="btn-close"
+        (click)="onClose()"
+        [disabled]="isSubmitting()"
+        title="Close"
+      >✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      @if (errorMessage()) {
+        <div class="error-banner fade-in">
+          <span class="error-icon">⚠️</span>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- Row: Title + Company -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="jobFormTitle">
+            Job Title <span class="required">*</span>
+          </label>
+          <input
+            id="jobFormTitle"
+            class="form-input"
+            type="text"
+            [(ngModel)]="form.title"
+            name="title"
+            placeholder="e.g. Senior Angular Engineer"
+            [disabled]="isSubmitting()"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="jobFormCompany">
+            Company <span class="required">*</span>
+          </label>
+          <input
+            id="jobFormCompany"
+            class="form-input"
+            type="text"
+            [(ngModel)]="form.company"
+            name="company"
+            placeholder="e.g. TechCorp"
+            [disabled]="isSubmitting()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <!-- Row: Location + Salary (salary shown only in edit mode) -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="jobFormLocation">
+            Location <span class="optional">(optional)</span>
+          </label>
+          <input
+            id="jobFormLocation"
+            class="form-input"
+            type="text"
+            [(ngModel)]="form.location"
+            name="location"
+            placeholder="e.g. Remote, Hyderabad IN"
+            [disabled]="isSubmitting()"
+            autocomplete="off"
+          />
+        </div>
+
+        @if (isEdit) {
+          <div class="form-group">
+            <label class="form-label" for="jobFormSalary">
+              Salary / CTC <span class="optional">(optional)</span>
+            </label>
+            <input
+              id="jobFormSalary"
+              class="form-input"
+              type="text"
+              [(ngModel)]="form.salary"
+              name="salary"
+              placeholder="e.g. ₹30–40 LPA"
+              [disabled]="isSubmitting()"
+              autocomplete="off"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- URL -->
+      <div class="form-group">
+        <label class="form-label" for="jobFormUrl">
+          Job Link
+          @if (!isEdit) { <span class="required">*</span> }
+          @if (isEdit)  { <span class="optional">(optional)</span> }
+        </label>
+        <input
+          id="jobFormUrl"
+          class="form-input"
+          type="text"
+          [(ngModel)]="form.url"
+          name="url"
+          placeholder="e.g. https://linkedin.com/jobs/view/..."
+          [disabled]="isSubmitting()"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label" for="jobFormDescription">
+          Job Description
+          @if (!isEdit) { <span class="required">*</span> }
+          @if (isEdit)  { <span class="optional">(optional)</span> }
+        </label>
+        <textarea
+          id="jobFormDescription"
+          class="form-input form-textarea"
+          [(ngModel)]="form.description"
+          name="description"
+          rows="9"
+          [placeholder]="isEdit
+            ? 'Paste an updated job description (leave unchanged to keep current).'
+            : 'Paste the full job description here — the more detail, the more accurate the match analysis.'"
+          [disabled]="isSubmitting()"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button
+        id="jobFormModalCancel"
+        class="btn btn-secondary"
+        (click)="onClose()"
+        [disabled]="isSubmitting()"
+      >
+        Cancel
+      </button>
+      <button
+        id="jobFormModalSave"
+        class="btn btn-primary"
+        (click)="onSave()"
+        [disabled]="!isFormValid || isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          <span class="spinner"></span>
+          <span>Analyzing Match...</span>
+        } @else if (isEdit) {
+          <span>💾 Save Changes</span>
+        } @else {
+          <span>✨ Analyze &amp; Add Job</span>
+        }
+      </button>
+    </div>
+
+  </div>
+</div>

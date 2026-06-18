@@ -8,12 +8,12 @@ import { FilterTabsComponent } from '../../../../shared/components/filter-tabs/f
 import { ScoreRingComponent } from '../../../../shared/components/score-ring/score-ring.component';
 import { MatchEvaluationComponent } from '../../../../shared/components/match-evaluation/match-evaluation.component';
 import { StatusSelectorComponent } from '../../../../shared/components/status-selector/status-selector.component';
-import { AddJobModalComponent } from '../../components/add-job-modal/add-job-modal.component';
+import { JobFormModalComponent } from '../../../../shared/components/job-form-modal/job-form-modal.component';
 
 @Component({
   selector: 'app-job-matches',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent, FilterTabsComponent, ScoreRingComponent, MatchEvaluationComponent, StatusSelectorComponent, AddJobModalComponent],
+  imports: [CommonModule, EmptyStateComponent, FilterTabsComponent, ScoreRingComponent, MatchEvaluationComponent, StatusSelectorComponent, JobFormModalComponent],
   templateUrl: './matches.component.html',
   styleUrls: ['./matches.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

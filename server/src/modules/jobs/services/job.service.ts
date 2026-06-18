@@ -175,6 +175,13 @@ export class JobService {
 
     return { job, matchResult };
   }
+
+  static async updateJobFields(
+    jobId: string,
+    updates: Partial<Pick<Job, 'title' | 'company' | 'location' | 'description' | 'url' | 'salary'>>
+  ) {
+    return JobRepository.updateJobFields(jobId, updates);
+  }
 }
 
 

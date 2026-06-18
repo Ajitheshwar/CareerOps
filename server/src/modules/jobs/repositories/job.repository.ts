@@ -241,6 +241,53 @@ export class JobRepository {
       console.error('Failed to cleanup old scraped jobs:', err);
     }
   }
+  static async updateJobFields(
+    jobId: string,
+    updates: Partial<Pick<Job, 'title' | 'company' | 'location' | 'description' | 'url' | 'salary'>>
+  ): Promise<HistoricalJob | null> {
+    try {
+      const historyCol = await getCollection<HistoricalJob>('jobs_history');
+      const listingsCol = await getCollection<JobListing>('job_listings');
+      const artifactsCol = await getCollection<GeneratedArtifact>('generated_artifacts');
+
+      // Build nested update object for the embedded `job` sub-document
+      const jobFieldUpdates: Record<string, any> = { updatedAt: new Date() };
+      for (const [key, value] of Object.entries(updates)) {
+        jobFieldUpdates[`job.${key}`] = value;
+      }
+
+      // Editing job details invalidates all AI-generated materials — clear them atomically
+      await historyCol.updateOne(
+        { id: jobId },
+        {
+          $set: jobFieldUpdates,
+          $unset: {
+            tailoredResume: '',
+            coverLetter: '',
+            interviewPrep: ''
+          }
+        }
+      );
+
+      // Remove the generated artifact document linked to this job
+      await artifactsCol.deleteMany({ jobId });
+
+      // Mirror editable fields to job_listings as well
+      const listingFieldUpdates: Record<string, any> = { updatedAt: new Date() };
+      const listingKeys = ['title', 'company', 'location', 'description', 'url'] as const;
+      for (const key of listingKeys) {
+        if (updates[key] !== undefined) {
+          listingFieldUpdates[key] = updates[key];
+        }
+      }
+      await listingsCol.updateOne({ id: jobId }, { $set: listingFieldUpdates });
+
+      return await historyCol.findOne({ id: jobId });
+    } catch (err) {
+      console.error(`Failed to update job fields for ${jobId}:`, err);
+      throw err;
+    }
+  }
 }
 
 
