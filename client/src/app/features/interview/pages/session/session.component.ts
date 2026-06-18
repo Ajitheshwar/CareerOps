@@ -42,6 +42,7 @@ export class InterviewSessionComponent implements OnInit {
   roundCompleted = signal<boolean>(false);
   roundMessage = signal<string>('');
   roundProgress = signal<number>(0);
+  previousQuestions = signal<InterviewQuestion[]>([]);
 
   // Computeds
   activeQuestion = computed(() => {
@@ -84,10 +85,31 @@ export class InterviewSessionComponent implements OnInit {
       // Point index to the latest question
       this.activeQuestionIndex.set(data.questions.length - 1);
       this.resetAnswerForm();
+
+      // Load previous questions in this category
+      await this.loadPreviousQuestions(data.session.type);
     } catch (err: any) {
       alert(err.message || 'Failed to load interview session.');
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  async loadPreviousQuestions(roundType: string) {
+    try {
+      const allSessions = await this.interviewApi.getSessionsByJob('generic');
+      const otherSessions = allSessions.filter(s => s.id !== this.sessionId() && s.type === roundType);
+      const pastQList: InterviewQuestion[] = [];
+      for (const s of otherSessions) {
+        if (s.questions && s.questions.length > 0) {
+          pastQList.push(...s.questions);
+        }
+      }
+      // Sort chronologically (newest first)
+      pastQList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      this.previousQuestions.set(pastQList);
+    } catch (err) {
+      console.error('Failed to load previous questions for this round type:', err);
     }
   }
 
@@ -258,10 +280,10 @@ export class InterviewSessionComponent implements OnInit {
 
   goBack() {
     const sess = this.session();
-    if (sess) {
+    if (sess && sess.jobId && sess.jobId !== 'generic') {
       this.router.navigate(['/jobs', sess.jobId]);
     } else {
-      this.router.navigate(['/matches']);
+      this.router.navigate(['/coach']);
     }
   }
 }

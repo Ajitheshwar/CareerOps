@@ -55,8 +55,7 @@ export const routes: Routes = [
       },
       {
         path: 'interview/dashboard',
-        loadComponent: () => import('./features/interview/pages/dashboard/dashboard.component').then(m => m.InterviewDashboardComponent),
-        title: 'Interview Readiness | CareerOps AI'
+        redirectTo: 'coach'
       },
       {
         path: 'interview/session/:id',

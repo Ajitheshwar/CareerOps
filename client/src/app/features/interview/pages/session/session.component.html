@@ -99,7 +99,7 @@
       
       <div class="complete-actions mt-24">
         <button (click)="goBack()" class="btn btn-primary">
-          Return to Job Dashboard
+          Return to Dashboard
         </button>
       </div>
     </div>
@@ -240,6 +240,45 @@
           </button>
         </div>
 
+      </div>
+
+      <!-- Previous Questions History Section -->
+      <div class="previous-questions-section mt-40" *ngIf="previousQuestions().length > 0" style="margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+        <h4 style="margin-bottom: 8px;">Previous Questions in Category</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Review your past responses and AI performance critiques for this interview round category.</p>
+        
+        <div class="past-questions-list" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="glass-card past-question-card" *ngFor="let pq of previousQuestions()" style="padding: 20px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.01);">
+            <div class="pq-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge badge-cyan" style="font-size: 0.75rem;">{{ pq.tips }}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Attempted on {{ pq.createdAt | date:'mediumDate' }}</span>
+            </div>
+            <h5 style="margin: 0; font-size: 1rem; color: white;">{{ pq.question }}</h5>
+            
+            <div class="pq-user-answer" *ngIf="pq.userAnswer" style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent-cyan);">
+              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--accent-cyan); font-weight: 600; display: block; margin-bottom: 4px;">Your Answer</span>
+              <p style="margin: 0; font-size: 0.88rem; color: var(--text-light); white-space: pre-wrap;">{{ pq.userAnswer }}</p>
+            </div>
+            <div class="pq-status-badge" *ngIf="pq.isSkipped || pq.isDontKnow" style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge" [class.badge-purple]="pq.isDontKnow" [class.badge-secondary]="pq.isSkipped" style="font-size: 0.75rem;">
+                {{ pq.isSkipped ? 'Skipped Question' : 'Flagged Knowledge Gap (I Don\'t Know)' }}
+              </span>
+            </div>
+
+            <div class="pq-evaluation-box" *ngIf="pq.evaluation" style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent-purple);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--accent-purple); font-weight: 600;">AI Evaluation Critique</span>
+                <span class="badge badge-purple" style="font-size: 0.75rem;">Score: {{ pq.evaluation.score }}%</span>
+              </div>
+              <p style="margin: 0; font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">{{ pq.evaluation.feedback }}</p>
+              
+              <div *ngIf="pq.evaluation.expectedAnswer" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+                <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--accent-purple); font-weight: 600; display: block; margin-bottom: 4px;">Ideal Key Concepts / Answer Model</span>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">{{ pq.evaluation.expectedAnswer }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
   </main>

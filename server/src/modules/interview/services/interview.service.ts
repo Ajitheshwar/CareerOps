@@ -20,9 +20,16 @@ export class InterviewService {
     }
   ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion }> {
     // 1. Fetch Job context
-    const historicalJob = await JobRepository.getJobHistoryById(jobId);
-    if (!historicalJob) {
-      throw new Error(`Job details not found for ID ${jobId}`);
+    let jobTitle = 'Generic Career Path';
+    let company = 'General';
+
+    if (jobId !== 'generic') {
+      const historicalJob = await JobRepository.getJobHistoryById(jobId);
+      if (!historicalJob) {
+        throw new Error(`Job details not found for ID ${jobId}`);
+      }
+      jobTitle = historicalJob.job.title;
+      company = historicalJob.job.company;
     }
 
     // 2. Load resume text to generate round goals
@@ -48,8 +55,8 @@ export class InterviewService {
       id: sessionId,
       userId,
       jobId,
-      jobTitle: historicalJob.job.title,
-      company: historicalJob.job.company,
+      jobTitle,
+      company,
       type,
       status: 'active',
       config,
@@ -107,6 +114,16 @@ export class InterviewService {
     const profile = await UserRepository.getUserProfile();
     if (!profile || !profile.resumeText) {
       throw new Error('Resume text not found. Please upload a resume first.');
+    }
+
+    if (jobId === 'generic') {
+      return await this.planAgent.run(
+        profile.resumeText,
+        'Generic Career Path',
+        'General',
+        'General interview prep based on the candidate\'s resume profile.',
+        { matchScore: 100, matchingSkills: [], skillGaps: [], fitExplanation: 'General evaluation of candidate resume profile' }
+      );
     }
 
     const historicalJob = await JobRepository.getJobHistoryById(jobId);

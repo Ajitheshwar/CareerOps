@@ -55,6 +55,7 @@ export interface InterviewSession {
   };
   progress: number;
   createdAt: string;
+  questions?: InterviewQuestion[];
 }
 
 export interface ReadinessScore {

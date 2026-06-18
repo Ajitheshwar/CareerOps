@@ -13,16 +13,23 @@ export class ReadinessService {
 
   static async recalculateReadiness(userId: string, jobId: string): Promise<ReadinessScore> {
     // 1. Load job and match details
-    const historicalJob = await JobRepository.getJobHistoryById(jobId);
-    if (!historicalJob) {
-      throw new Error(`Job history not found for ID ${jobId}`);
-    }
+    let jobTitle = 'Generic Career Path';
+    let company = 'General';
+    let matchScore = 100;
+    let matchingSkills: string[] = [];
+    let skillGaps: string[] = [];
 
-    const jobTitle = historicalJob.job.title;
-    const company = historicalJob.job.company;
-    const matchScore = historicalJob.matchResult?.matchScore || 0;
-    const matchingSkills = historicalJob.matchResult?.matchingSkills || [];
-    const skillGaps = historicalJob.matchResult?.skillGaps || [];
+    if (jobId !== 'generic') {
+      const historicalJob = await JobRepository.getJobHistoryById(jobId);
+      if (!historicalJob) {
+        throw new Error(`Job history not found for ID ${jobId}`);
+      }
+      jobTitle = historicalJob.job.title;
+      company = historicalJob.job.company;
+      matchScore = historicalJob.matchResult?.matchScore || 0;
+      matchingSkills = historicalJob.matchResult?.matchingSkills || [];
+      skillGaps = historicalJob.matchResult?.skillGaps || [];
+    }
 
     // 2. Load recent question feedback & evaluations (max 30 questions)
     const recentQuestions = await InterviewRepository.getRecentQuestions(userId, jobId, 30);

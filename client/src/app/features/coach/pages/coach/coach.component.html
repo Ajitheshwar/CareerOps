@@ -1,31 +1,20 @@
 <div class="coach-wrapper fade-in">
   <div class="coach-header">
     <h2>Interview Training Coach</h2>
-    <p>Practice role-specific questions generated based on your resume and target requirements.</p>
+    <p>Adaptive AI interview practice tailored strictly to your resume profile.</p>
   </div>
 
-  @if (!job()) {
-    <app-empty-state 
-      title="No job selected" 
-      message="Go to the Matches tab, expand a job card, and click 'Tailor Materials' to trigger the Interview Prep Agent." 
-      icon="chat"
-    ></app-empty-state>
-  } @else if (status() === 'preparing') {
-    <app-agent-loader
-      title="Agent is generating interview questions..."
-      [description]="'Preparing technical and behavioral practice guides for <strong>' + job()?.company + '</strong>.'"
-    ></app-agent-loader>
-  } @else if (!prepData()) {
-    <app-empty-state 
-      title="Prep guides required" 
-      message="Click 'Tailor Materials' on the Matches dashboard to schedule coaching items." 
-      icon="chat"
-    ></app-empty-state>
-  } @else {
-    <app-interview-coach-practice 
-      [jobId]="job()!.id" 
-      [questions]="questions()"
-    ></app-interview-coach-practice>
-  }
-</div>
+  <div *ngIf="isLoading()" class="loader-wrapper text-center font-main py-48" style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 40px;">
+    <div class="loader-circle" style="width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--accent-purple); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <h4>Initializing Interview Coach...</h4>
+    <p style="color: var(--text-muted);">Assembling candidate resume and preparing adaptive rounds...</p>
+  </div>
 
+  <div *ngIf="!isLoading()" style="margin-top: 24px;">
+    <app-interview-prep-dashboard
+      [readiness]="readiness()"
+      [sessions]="sessions()"
+      [details]="genericJobDetails"
+    ></app-interview-prep-dashboard>
+  </div>
+</div>

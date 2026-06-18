@@ -6,6 +6,7 @@ import { RoundOrchestrator } from '../services/round-orchestrator.service';
 import { QuestionGenerationService } from './../services/question-generation.service';
 import { ReadinessService } from '../services/readiness.service';
 import { InterviewRepository } from '../repositories/interview.repository';
+import { InterviewRepository as InterviewLegacyRepository } from '../repositories/interview-legacy.repository';
 
 export class InterviewController {
   static async createSession(req: Request, res: Response) {
@@ -46,7 +47,16 @@ export class InterviewController {
     }
     try {
       const sessions = await InterviewService.getSessionsByJob(userId, jobId as string);
-      res.json(sessions);
+      const sessionsWithQuestions = await Promise.all(
+        sessions.map(async (s) => {
+          const questions = await InterviewRepository.getQuestionsBySession(s.id);
+          return {
+            ...s,
+            questions
+          };
+        })
+      );
+      res.json(sessionsWithQuestions);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -77,6 +87,7 @@ export class InterviewController {
         session.status = 'completed';
         session.progress = 100;
         await InterviewRepository.saveSession(session);
+        await InterviewController.compileAndSaveMockInterview(sessionId, session);
       } else {
         session.progress = roundStatus.progress;
         await InterviewRepository.saveSession(session);
@@ -123,6 +134,7 @@ export class InterviewController {
         session.status = 'completed';
         session.progress = 100;
         await InterviewRepository.saveSession(session);
+        await InterviewController.compileAndSaveMockInterview(sessionId, session);
       } else {
         session.progress = roundStatus.progress;
         await InterviewRepository.saveSession(session);
@@ -169,6 +181,7 @@ export class InterviewController {
         session.status = 'completed';
         session.progress = 100;
         await InterviewRepository.saveSession(session);
+        await InterviewController.compileAndSaveMockInterview(sessionId, session);
       } else {
         session.progress = roundStatus.progress;
         await InterviewRepository.saveSession(session);
@@ -264,6 +277,64 @@ export class InterviewController {
       res.json(plan);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async compileAndSaveMockInterview(sessionId: string, session: any) {
+    try {
+      const questions = await InterviewRepository.getQuestionsBySession(sessionId);
+      
+      const transcript = questions.map(q => {
+        const roleLines: { role: 'interviewer' | 'candidate'; text: string; timestamp: Date }[] = [
+          { role: 'interviewer', text: q.question, timestamp: q.createdAt }
+        ];
+        if (q.isSkipped) {
+          roleLines.push({ role: 'candidate', text: '[Question Skipped]', timestamp: q.updatedAt });
+        } else if (q.isDontKnow) {
+          roleLines.push({ role: 'candidate', text: '[Candidate indicated knowledge gap / Don\'t Know]', timestamp: q.updatedAt });
+        } else if (q.userAnswer) {
+          roleLines.push({ role: 'candidate', text: q.userAnswer, timestamp: q.updatedAt });
+        }
+        return roleLines;
+      }).flat();
+
+      // Calculate average score
+      const evaluated = questions.filter(q => q.evaluation);
+      const totalScore = evaluated.reduce((sum, q) => sum + (q.evaluation?.score || 0), 0);
+      const avgScore = evaluated.length > 0 ? Math.round(totalScore / evaluated.length) : 0;
+
+      // Gather feedback and action items
+      const feedback: string[] = [];
+      const actionItems: string[] = [];
+
+      questions.forEach(q => {
+        if (q.evaluation) {
+          if (q.evaluation.feedback) {
+            feedback.push(`${q.tips || 'General'}: ${q.evaluation.feedback}`);
+          }
+          if (q.evaluation.keyConcepts && q.evaluation.keyConcepts.length > 0) {
+            actionItems.push(...q.evaluation.keyConcepts);
+          }
+          if (q.evaluation.learningNotes) {
+            actionItems.push(q.evaluation.learningNotes);
+          }
+        }
+      });
+
+      // Save MockInterview record
+      await InterviewLegacyRepository.saveMockInterview({
+        id: session.id,
+        jobId: session.jobId,
+        jobTitle: session.jobTitle,
+        company: session.company,
+        transcript,
+        performanceScore: avgScore,
+        feedback,
+        actionItems: Array.from(new Set(actionItems.filter(Boolean))), // deduplicate
+        createdAt: new Date()
+      } as any);
+    } catch (compileErr) {
+      console.error('Failed to compile and save MockInterview on session completion:', compileErr);
     }
   }
 }

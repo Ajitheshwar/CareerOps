@@ -20,7 +20,6 @@ export class JobTrackerComponent implements OnInit {
   router = inject(Router);
 
   jobs = this.agentService.trackerJobs;
-  showForm = signal<boolean>(false);
 
   columns = [
     { status: 'scraped' as const, title: 'Scraped', color: '#6b7280' },
@@ -29,14 +28,6 @@ export class JobTrackerComponent implements OnInit {
     { status: 'accepted' as const, title: 'Offers', color: '#10b981' },
     { status: 'rejected' as const, title: 'Archived', color: '#ef4444' }
   ];
-
-  newJob = {
-    title: '',
-    company: '',
-    location: '',
-    description: '',
-    url: ''
-  };
 
   ngOnInit() {
     this.agentService.loadTrackerJobs();
@@ -47,33 +38,11 @@ export class JobTrackerComponent implements OnInit {
     this.router.navigate(['/jobs', jobId]);
   }
 
-  toggleAddForm() {
-    this.showForm.set(!this.showForm());
-  }
-
   getJobsByStatus(status: JobListing['status']) {
     return this.jobs().filter(j => j.status === status);
   }
 
   onStatusChange(jobId: string, status: JobListing['status']) {
     this.agentService.updateJobStatus(jobId, status);
-  }
-
-  async onAddJob() {
-    if (!this.newJob.title || !this.newJob.company) return;
-
-    await this.agentService.addCustomJob({
-      ...this.newJob,
-      status: 'applied'
-    });
-
-    this.newJob = {
-      title: '',
-      company: '',
-      location: '',
-      description: '',
-      url: ''
-    };
-    this.showForm.set(false);
   }
 }

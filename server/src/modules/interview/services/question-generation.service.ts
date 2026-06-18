@@ -19,14 +19,18 @@ export class QuestionGenerationService {
       throw new Error('Resume text not found. Please upload a resume first.');
     }
 
-    const historicalJob = await JobRepository.getJobHistoryById(session.jobId);
-    if (!historicalJob) {
-      throw new Error(`Job details not found for ID ${session.jobId}`);
-    }
-
     const resumeText = profile.resumeText;
-    const jobDesc = historicalJob.job.description;
-    const company = historicalJob.job.company;
+    let jobDesc = 'General career and domain questions based on the candidate\'s resume profile. Completely independent of any specific job or company. Do not mention any specific job title or company name.';
+    let company = 'General';
+
+    if (session.jobId !== 'generic') {
+      const historicalJob = await JobRepository.getJobHistoryById(session.jobId);
+      if (!historicalJob) {
+        throw new Error(`Job details not found for ID ${session.jobId}`);
+      }
+      jobDesc = historicalJob.job.description;
+      company = historicalJob.job.company;
+    }
 
     // 2. Fetch history of questions for this session
     const questionHistory = await InterviewRepository.getQuestionsBySession(session.id);

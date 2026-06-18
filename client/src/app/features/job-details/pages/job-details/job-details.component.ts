@@ -86,13 +86,21 @@ export class JobDetailsComponent implements OnInit {
     return this.jobDetails()?.interviewPrep?.questions || [];
   });
 
+  private lastStatus: string | null = null;
+
   constructor() {
     effect(() => {
       const currentStatus = this.agentService.status();
       const selectedId = this.agentService.selectedJobId();
-      if (currentStatus === 'completed' && selectedId === this.jobId()) {
+      if (
+        currentStatus === 'completed' &&
+        this.lastStatus &&
+        this.lastStatus !== 'completed' &&
+        selectedId === this.jobId()
+      ) {
         this.loadJob();
       }
+      this.lastStatus = currentStatus;
     });
   }
 

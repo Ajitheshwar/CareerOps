@@ -55,9 +55,6 @@ export class InterviewPrepDashboardComponent {
     return this.sessions.find(s => s.type === roundType);
   }
 
-  viewDashboard(): void {
-    this.router.navigate(['/interview/dashboard']);
-  }
 
   openSetupModal(roundType: string, roundLabel: string) {
     this.selectedRoundType = roundType;

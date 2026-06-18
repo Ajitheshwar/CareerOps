@@ -1,24 +1,7 @@
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(2, 6, 23, 0.82);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+.modal-panel {
+  max-width: 520px;
 }
 
-.modal-panel {
-  width: 100%;
-  max-width: 520px;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding: 0 !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-}
 
 .difficulty-toggle-row {
   display: grid;
@@ -122,3 +105,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
+
+.modal-body .form-group {
+  margin-bottom: 14px;
+}
+
+

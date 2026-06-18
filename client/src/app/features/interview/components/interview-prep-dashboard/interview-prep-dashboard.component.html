@@ -11,7 +11,7 @@
     </div>
 
     <div class="summary-stats">
-      <div class="stat-line">
+      <div class="stat-line" *ngIf="details?.id !== 'generic'">
         <span class="stat-label">Resume Match Score</span>
         <span class="stat-value text-accent">{{ details?.matchResult?.matchScore || 0 }}%</span>
       </div>
@@ -26,16 +26,24 @@
     </div>
 
     <div class="strengths-box" *ngIf="readiness?.strengths?.length">
-      <h5>Core Strengths</h5>
+      <h5>Core Demonstrated Strengths</h5>
       <div class="tags-container">
         <span class="tag-badge badge-green" *ngFor="let s of readiness?.strengths">{{ s }}</span>
       </div>
     </div>
 
-    <div class="action-box">
-      <button (click)="viewDashboard()" class="btn btn-primary w-100">
-        View Readiness Dashboard
-      </button>
+    <div class="strengths-box" *ngIf="readiness?.weakAreas?.length" style="margin-top: 16px;">
+      <h5>Growth Gaps</h5>
+      <div class="tags-container">
+        <span class="tag-badge" *ngFor="let w of readiness?.weakAreas" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25);">{{ w }}</span>
+      </div>
+    </div>
+
+    <div class="strengths-box" *ngIf="readiness?.recommendedLearningAreas?.length" style="margin-top: 16px;">
+      <h5>Recommended Learning Focus</h5>
+      <div class="tags-container">
+        <span class="tag-badge badge-purple" *ngFor="let l of readiness?.recommendedLearningAreas">{{ l }}</span>
+      </div>
     </div>
   </div>
 
