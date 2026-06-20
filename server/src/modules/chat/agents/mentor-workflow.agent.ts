@@ -79,6 +79,43 @@ async function retrieveHybridContext(query: string, llm: LLMService): Promise<st
       context += `--- MOCK INTERVIEW PERFORMANCE METRICS ---\n${interviewContext}\n\n`;
     }
 
+    // 3.5 Job Match Results & Analysis
+    let matchContext = "";
+    try {
+      const col = await getCollection('jobs_history');
+      const historyItems = await col.find({ isDeleted: { $ne: true }, matchResult: { $exists: true } }).sort({ updatedAt: -1 }).limit(3).toArray();
+      if (historyItems.length > 0) {
+        matchContext = historyItems.map((h: any) => {
+          const m = h.matchResult;
+          return `- Job: ${h.job?.title || 'N/A'} at ${h.job?.company || 'N/A'}\n  Match Score: ${m.matchScore !== null && m.matchScore !== undefined ? m.matchScore + '%' : 'N/A'}\n  Fit Explanation: ${m.fitExplanation || 'N/A'}\n  Matching Skills: ${(m.matchingSkills || []).join(', ') || 'None'}\n  Skill Gaps: ${(m.skillGaps || []).join(', ') || 'None'}`;
+        }).join('\n\n');
+      }
+    } catch (err) {
+      // ignore silently
+    }
+    
+    if (matchContext) {
+      context += `--- JOB MATCH METRICS & SKILL GAPS ---\n${matchContext}\n\n`;
+    }
+
+    // 3.7 Job Readiness Scores
+    let readinessContext = "";
+    try {
+      const col = await getCollection('readiness_scores');
+      const scores = await col.find({}).sort({ updatedAt: -1 }).limit(3).toArray();
+      if (scores.length > 0) {
+        readinessContext = scores.map((r: any) => 
+          `- Job ID: ${r.jobId}\n  Overall Readiness Score: ${r.overallReadiness}%\n  Breakdown: Resume Defense: ${r.resumeDefenseReadiness}%, Technical: ${r.technicalReadiness}%, Behavioral: ${r.behavioralReadiness}%, System Design: ${r.systemDesignReadiness}%, Hiring Manager: ${r.hiringManagerReadiness}%\n  Strengths: ${(r.strengths || []).join(', ') || 'None'}\n  Weak Areas: ${(r.weakAreas || []).join(', ') || 'None'}\n  Recommended Learning: ${(r.recommendedLearningAreas || []).join(', ') || 'None'}\n  Next Practice Suggestion: ${r.recommendedNextPracticeRound || 'N/A'}`
+        ).join('\n\n');
+      }
+    } catch (err) {
+      // ignore silently
+    }
+
+    if (readinessContext) {
+      context += `--- INTERVIEW READINESS PROFILES ---\n${readinessContext}\n\n`;
+    }
+
     // 4. Previously Generated Tailored Artifacts (Resumes/Cover Letters)
     let artifactsContext = "";
     try {

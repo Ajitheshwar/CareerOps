@@ -1,7 +1,7 @@
 // Integration test for JobEnrichmentService using the shared MongoDB client (MongoClient).
 // Run with: ts-node src/modules/jobs/agents/job-search/services/job-enrichment-db.test.ts
 
-import { getCollection } from '../../shared/db';
+import { getCollection } from '../../../../../shared/db';
 import { JobEnrichmentService } from './JobEnrichmentService';
 import { Job } from '../models/Job';
 
@@ -23,7 +23,7 @@ import { Job } from '../models/Job';
     );
 
     if (cleanedDesc !== job.description) {
-      await jobsCollection.updateOne({ _id: job.id }, { $set: { description: cleanedDesc } });
+      await jobsCollection.updateOne({ _id: job.id as any }, { $set: { description: cleanedDesc } });
       logger('info', `Updated job ${job.id}`);
     }
   }
