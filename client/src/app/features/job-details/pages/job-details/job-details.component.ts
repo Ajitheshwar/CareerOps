@@ -14,6 +14,7 @@ import { InterviewCoachPracticeComponent } from '../../../../shared/components/i
 import { InterviewApiService, InterviewSession, ReadinessScore } from '../../../interview/services/interview-api.service';
 import { InterviewPrepDashboardComponent } from '../../../interview/components/interview-prep-dashboard/interview-prep-dashboard.component';
 import { JobFormModalComponent, JobFormValues } from '../../../../shared/components/job-form-modal/job-form-modal.component';
+import { MarkdownPipe } from '../../../../shared/pipes/markdown.pipe';
 
 @Component({
   selector: 'app-job-details',
@@ -30,7 +31,8 @@ import { JobFormModalComponent, JobFormValues } from '../../../../shared/compone
     CoverLetterDraftComponent,
     InterviewCoachPracticeComponent,
     InterviewPrepDashboardComponent,
-    JobFormModalComponent
+    JobFormModalComponent,
+    MarkdownPipe
   ],
   templateUrl: './job-details.component.html',
   styleUrls: ['./job-details.component.css']

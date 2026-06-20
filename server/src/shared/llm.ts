@@ -22,10 +22,11 @@ const LOW_PRIORITY_MODELS = [
 ];
 
 export class LLMService {
+  private static instance: LLMService | null = null;
   private geminiClient: GoogleGenerativeAI | null = null;
   private openaiClient: OpenAI | null = null;
 
-  constructor() {
+  private constructor() {
     const geminiKey = process.env.GEMINI_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
@@ -40,6 +41,13 @@ export class LLMService {
     }
   }
 
+  static getInstance(): LLMService {
+    if (!LLMService.instance) {
+      LLMService.instance = new LLMService();
+    }
+    return LLMService.instance;
+  }
+
   /**
    * Generates a 768-dimensional vector embedding for the given text.
    * Returns an empty array if the service is not configured.
@@ -52,8 +60,10 @@ export class LLMService {
     }
 
     try {
+      // Truncate to a safe length (e.g. 8000 characters) to fit within model token limits
+      const safeText = (text || '').substring(0, 8000);
       const model = client.getGenerativeModel({ model: 'gemini-embedding-001' });
-      const result = await this.executeWithRetry(() => model.embedContent(text));
+      const result = await this.executeWithRetry(() => model.embedContent(safeText));
       if (result && result.embedding && result.embedding.values) {
         return result.embedding.values;
       }
@@ -232,7 +242,13 @@ export class LLMService {
                             errorString.includes('Quota exceeded') ||
                             errorString.includes('Too Many Requests');
         
-        if (isRateLimit && i < retries - 1) {
+        const isTransientNetwork = errorString.includes('fetch failed') ||
+                                   errorString.includes('ETIMEDOUT') ||
+                                   errorString.includes('ECONNRESET') ||
+                                   errorString.includes('socket hang up') ||
+                                   errorString.includes('EAI_AGAIN');
+
+        if ((isRateLimit || isTransientNetwork) && i < retries - 1) {
           // Parse retry delay from the error message if possible
           const match = errorString.match(/retry in ([\d\.]+)s/i);
           let retryDelaySecs = 0;
@@ -250,7 +266,7 @@ export class LLMService {
                                       !errorString.toLowerCase().includes('minute') && 
                                       !errorString.toLowerCase().includes('second'));
 
-          if (isDailyOrExhausted) {
+          if (isDailyOrExhausted && !isTransientNetwork) {
             console.warn(`LLMService: Daily quota or resource exhausted for current model. Throwing immediately to fallback...`);
             throw error;
           }
@@ -260,7 +276,7 @@ export class LLMService {
             currentDelay = retryDelaySecs * 1000 + 500; // Use the API's retry delay if available
           }
           
-          console.warn(`LLMService: Rate limit (429) hit. Retrying in ${Math.round(currentDelay)}ms (Attempt ${i + 1}/${retries})...`);
+          console.warn(`LLMService: Retryable error hit (${errorString}). Retrying in ${Math.round(currentDelay)}ms (Attempt ${i + 1}/${retries})...`);
           await new Promise(resolve => setTimeout(resolve, currentDelay));
         } else {
           throw error;
@@ -270,4 +286,3 @@ export class LLMService {
     throw new Error('Max retries exceeded');
   }
 }
-

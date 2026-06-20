@@ -1,6 +1,6 @@
 <div class="analytics-wrapper fade-in">
   <div class="analytics-header">
-    <h2>Interview Preparation & Analytics</h2>
+    <h2>Interview Preparation &amp; Analytics</h2>
     <p>Analyze mock interview performance ratings, review feedback, and track key action items suggested by the career coach.</p>
   </div>
 
@@ -23,21 +23,34 @@
       </div>
       <div class="glass-card stat-card">
         <span class="stat-label">Pending Action Items</span>
-        <span class="stat-value text-cyan">{{ getActionItems().length }}</span>
+        <span class="stat-value text-cyan">{{ getPendingItemCount() }}</span>
       </div>
     </div>
 
     <div class="details-grid">
-      <!-- Action items list -->
+      <!-- ── Action Items Checklist ── -->
       <div class="glass-card details-card">
-        <h3>Coach Action Items Checklist</h3>
-        <p class="section-desc">Key engineering improvements and interview techniques to master before your next call.</p>
-        
+        <div class="checklist-header">
+          <div>
+            <h3>Coach Action Items Checklist</h3>
+            <p class="section-desc">Key improvements to master before your next session.</p>
+          </div>
+          @if (getCompletedItems().length > 0) {
+            <button class="completed-btn" (click)="showCompletedModal.set(true)">
+              ✅ Completed ({{ getCompletedItems().length }})
+            </button>
+          }
+        </div>
+
         <div class="action-list mt-16">
-          @for (item of getActionItems(); track item; let idx = $index) {
+          @for (entry of getVisibleItems(); track entry.item) {
             <label class="action-item-checkbox">
-              <input type="checkbox" />
-              <span class="item-text">💡 {{ item }}</span>
+              <input 
+                type="checkbox" 
+                [checked]="false"
+                (change)="onActionItemChange(entry.interviewId, entry.item, $any($event.target).checked)"
+              />
+              <span class="item-text">💡 {{ entry.item }}</span>
             </label>
           } @empty {
             <div class="empty-state">
@@ -46,61 +59,85 @@
             </div>
           }
         </div>
+
+        <!-- View All / Show Less for checklist -->
+        @if (getPendingItemCount() > 20) {
+          <div class="view-all-row mt-16">
+            @if (!showAllItems()) {
+              <button class="view-all-btn" (click)="showAllItems.set(true)">
+                View All ({{ getPendingItemCount() - 20 }} more) ↓
+              </button>
+            } @else {
+              <button class="view-all-btn" (click)="showAllItems.set(false)">
+                Show Less ↑
+              </button>
+            }
+          </div>
+        }
       </div>
 
-      <!-- Session history log -->
+      <!-- ── Logged Sessions History ── -->
       <div class="glass-card details-card">
         <h3>Logged Sessions History</h3>
-        <p class="section-desc">Review coach transcripts, strengths, and feedback summaries from past interview sessions.</p>
-        
+        <p class="section-desc">Click a session to review AI feedback, evaluations, and your answers in detail.</p>
+
         <div class="session-list mt-16">
-          @for (session of mockInterviews(); track session.id) {
-            <div class="glass-card session-card">
-              <div class="session-header" (click)="toggleSession(session.id)">
-                <div>
+          @for (session of getVisibleSessions(); track session.id) {
+            <div class="session-card glass-card" (click)="navigateToSession(session.id)">
+              <div class="session-header">
+                <div class="session-info">
                   <h5>{{ session.jobTitle || 'Mock Interview' }}</h5>
                   <span class="company">{{ session.company || 'Unknown Company' }}</span>
-                </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                  <span class="score-badge" [ngClass]="getScoreClass(session.performanceScore)">
-                    {{ session.performanceScore }}% Score
-                  </span>
-                  <span>{{ expandedSessionId() === session.id ? '▲' : '▼' }}</span>
-                </div>
-              </div>
-
-              @if (expandedSessionId() === session.id) {
-                <div class="session-details fade-in">
-                  <div class="details-divider"></div>
-                  
-                  <div class="section-block">
-                    <h6>Coach Constructive Feedback</h6>
-                    <ul class="feedback-list">
-                      @for (f of session.feedback; track f) {
-                        <li>📌 {{ f }}</li>
-                      }
-                    </ul>
+                  <div class="session-meta-row">
+                    <span class="score-badge" [ngClass]="getScoreClass(session.performanceScore)">
+                      {{ session.performanceScore }}% Score
+                    </span>
                   </div>
-
-                  @if (session.transcript && session.transcript.length > 0) {
-                    <div class="section-block mt-12">
-                      <h6>Session Transcript History</h6>
-                      <div class="transcript-box">
-                        @for (line of session.transcript; track line.text) {
-                          <div class="transcript-line" [ngClass]="line.role">
-                            <strong>{{ line.role === 'interviewer' ? 'Interviewer: ' : 'You: ' }}</strong>
-                            <span>{{ line.text }}</span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
                 </div>
-              }
+                <span class="session-arrow">→</span>
+              </div>
             </div>
           }
         </div>
+
+        <!-- View All / Show Less for sessions -->
+        @if (mockInterviews().length > 10) {
+          <div class="view-all-row mt-16">
+            @if (!showAllSessions()) {
+              <button class="view-all-btn" (click)="showAllSessions.set(true)">
+                View All ({{ mockInterviews().length - 10 }} more) ↓
+              </button>
+            } @else {
+              <button class="view-all-btn" (click)="showAllSessions.set(false)">
+                Show Less ↑
+              </button>
+            }
+          </div>
+        }
       </div>
     </div>
   }
 </div>
+
+<!-- ── Completed Items Modal ── -->
+@if (showCompletedModal()) {
+  <div class="modal-overlay" (click)="showCompletedModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✅ Completed Action Items</h3>
+        <button class="modal-close-btn" (click)="showCompletedModal.set(false)">✕</button>
+      </div>
+      <p class="section-desc modal-desc">Items you have marked as done. Uncheck them from the checklist to move back to pending.</p>
+      <div class="completed-list">
+        @for (item of getCompletedItems(); track item) {
+          <div class="completed-item">
+            <span class="completed-check">✅</span>
+            <span class="completed-text">{{ item }}</span>
+          </div>
+        } @empty {
+          <p class="section-desc">No completed items yet.</p>
+        }
+      </div>
+    </div>
+  </div>
+}

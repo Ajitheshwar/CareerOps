@@ -4,6 +4,10 @@ export interface Job {
   company: string;
   location: string;
   salary?: string;
+  salaryMinLpa?: number;
+  salaryMaxLpa?: number;
+  salaryConfidence?: 'explicit' | 'unknown';
+  descriptionSource?: 'tavily-extract' | 'search-snippet';
   description: string;
   url?: string;
   source: string;
@@ -95,6 +99,7 @@ export interface MockInterview {
   performanceScore: number;
   feedback: string[];
   actionItems: string[];
+  completedActionItems?: string[];
   createdAt: Date;
 }
 
@@ -118,4 +123,3 @@ export interface HistoricalJob {
   createdAt?: string;
   updatedAt?: string;
 }
-

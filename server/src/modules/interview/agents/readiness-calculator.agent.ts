@@ -3,7 +3,7 @@ import { LLMService } from '../../../shared/llm';
 import { READINESS_SYSTEM_PROMPT, getReadinessUserPrompt } from '../prompts/readiness.prompt';
 
 export class ReadinessCalculatorAgent {
-  private llm = new LLMService();
+  private llm = LLMService.getInstance();
 
   async run(
     jobTitle: string,

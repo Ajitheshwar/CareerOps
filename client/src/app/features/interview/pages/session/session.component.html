@@ -51,7 +51,7 @@
     </div>
 
     <!-- Manual Difficulty Request Box -->
-    <div class="difficulty-adjuster-box" *ngIf="!isReviewMode()">
+    <div class="difficulty-adjuster-box" *ngIf="!isReviewMode() && !isViewOnlyMode()">
       <h5>Adjust Difficulty</h5>
       <p class="section-desc">Override AI and manually steer the next question's complexity.</p>
       <div class="adjuster-buttons">
@@ -83,15 +83,34 @@
     <!-- Header Controls -->
     <header class="workspace-header">
       <button (click)="goBack()" class="btn btn-secondary back-btn">
-        ← Exit Round
+        {{ isViewOnlyMode() ? '← Back to Analytics' : '← Exit Round' }}
       </button>
       <div class="workspace-status" *ngIf="roundCompleted()">
         <span class="badge badge-green">Round Completed</span>
       </div>
     </header>
 
+    <!-- View-Only Mode Banner -->
+    <div class="view-mode-banner fade-in" *ngIf="isViewOnlyMode()">
+      <div class="view-banner-left">
+        <span class="view-banner-label">Completed Session Review</span>
+        <div class="view-banner-chips">
+          <span class="view-chip difficulty-chip">{{ session()?.config?.difficulty || 'N/A' }}</span>
+          <span class="view-chip round-chip">{{ getRoundLabel(session()?.type || '') }}</span>
+          <span class="view-chip score-chip" *ngIf="viewOnlyAvgScore() !== null">Avg Score: {{ viewOnlyAvgScore() }}%</span>
+        </div>
+      </div>
+      <div class="view-banner-right">
+        <span class="view-progress-label">Session Progress</span>
+        <div class="view-progress-bar-bg">
+          <div class="view-progress-bar-fill" [style.width.%]="roundProgress()"></div>
+        </div>
+        <span class="view-progress-pct">{{ roundProgress() }}%</span>
+      </div>
+    </div>
+
     <!-- Round Complete Summary Mode -->
-    <div class="glass-card round-complete-card text-center fade-in" *ngIf="roundCompleted() && activeQuestionIndex() === questions().length - 1">
+    <div class="glass-card round-complete-card text-center fade-in" *ngIf="!isViewOnlyMode() && roundCompleted() && activeQuestionIndex() === questions().length - 1">
       <span class="complete-trophy">🏆</span>
       <h3>Practice Round Completed!</h3>
       <p class="round-msg">{{ roundMessage() || 'You have successfully practiced the objectives of this round.' }}</p>
@@ -123,7 +142,7 @@
         </div>
         <h4>{{ q.question }}</h4>
 
-        <div class="hint-container mt-12" *ngIf="!isReviewMode()">
+        <div class="hint-container mt-12" *ngIf="!isReviewMode() && !isViewOnlyMode()">
           <button (click)="getHint()" class="btn btn-secondary btn-sm" [disabled]="showHint()">
             💡 Need a hint?
           </button>
@@ -135,7 +154,7 @@
       </div>
 
       <!-- Interaction Box: Input Terminal & Controls (Active Mode) -->
-      <div class="glass-card terminal-card mt-16" *ngIf="!isReviewMode() && !q.evaluation">
+      <div class="glass-card terminal-card mt-16" *ngIf="!isReviewMode() && !isViewOnlyMode() && !q.evaluation">
         <div class="terminal-header">
           <span class="header-indicator red"></span>
           <span class="header-indicator yellow"></span>

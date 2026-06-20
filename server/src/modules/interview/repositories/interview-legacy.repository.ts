@@ -25,4 +25,18 @@ export class InterviewRepository {
       return [];
     }
   }
+
+  static async updateActionItemChecked(id: string, item: string, checked: boolean): Promise<void> {
+    try {
+      const col = await getCollection<MockInterview>('mock_interviews');
+      const update = checked
+        ? { $addToSet: { completedActionItems: item } }
+        : { $pull: { completedActionItems: item } };
+      await col.updateOne({ id }, update as any);
+    } catch (err) {
+      console.error('Failed to update action item checked state:', err);
+      throw err;
+    }
+  }
 }
+

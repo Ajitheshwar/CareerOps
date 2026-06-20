@@ -3,7 +3,7 @@ import { LLMService } from '../../../shared/llm';
 import { NEXT_QUESTION_SYSTEM_PROMPT, getNextQuestionUserPrompt } from '../prompts/next-question.prompt';
 
 export class AdaptiveQuestionAgent {
-  private llm = new LLMService();
+  private llm = LLMService.getInstance();
 
   async run(
     resumeText: string,

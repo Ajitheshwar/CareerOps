@@ -28,9 +28,15 @@ export class InterviewService {
       performanceScore: interviewData.performanceScore || 0,
       feedback: interviewData.feedback || [],
       actionItems: interviewData.actionItems || [],
+      completedActionItems: [],
       createdAt: new Date()
     });
 
     return id;
   }
+
+  static async updateActionItem(id: string, item: string, checked: boolean): Promise<void> {
+    return InterviewRepository.updateActionItemChecked(id, item, checked);
+  }
 }
+

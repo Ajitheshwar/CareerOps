@@ -5,5 +5,5 @@
       {{ copyButtonText() }}
     </button>
   </div>
-  <pre class="letter-pre">{{ coverLetter }}</pre>
+  <div class="letter-body markdown-body" [innerHTML]="coverLetter | markdown"></div>
 </div>

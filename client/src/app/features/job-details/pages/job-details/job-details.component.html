@@ -63,9 +63,7 @@
       <!-- Left Column: Description -->
       <div class="glass-card desc-card">
         <h4>Job Description</h4>
-        <div class="description-text">
-          {{ details.job.description }}
-        </div>
+        <div class="description-text markdown-body" [innerHTML]="details.job.description | markdown"></div>
       </div>
 
       <!-- Right Column: Match details -->

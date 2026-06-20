@@ -598,6 +598,39 @@ export class AgentService {
   }
 
   /**
+   * Toggle an action item's completed state — persists to DB
+   */
+  async updateActionItem(interviewId: string, item: string, checked: boolean) {
+    // Optimistic update
+    this.mockInterviews.update(list =>
+      list.map(iv => {
+        if (iv.id !== interviewId) return iv;
+        const completed = iv.completedActionItems ? [...iv.completedActionItems] : [];
+        if (checked && !completed.includes(item)) {
+          return { ...iv, completedActionItems: [...completed, item] };
+        } else if (!checked) {
+          return { ...iv, completedActionItems: completed.filter(c => c !== item) };
+        }
+        return iv;
+      })
+    );
+
+    try {
+      const res = await fetch(`${API_BASE}/interviews/${interviewId}/action-item`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item, checked })
+      });
+      if (!res.ok) {
+        throw new Error('Failed to update action item on server.');
+      }
+    } catch (err) {
+      console.error('Failed to persist action item state, reloading:', err);
+      await this.loadMockInterviews();
+    }
+  }
+
+  /**
    * Add a mock interview transcript record
    */
   async addMockInterview(interview: Partial<MockInterview>) {

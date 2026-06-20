@@ -3,7 +3,7 @@ import { LLMService } from '../../../shared/llm';
 
 export class ChatService {
   static async evaluateAnswer(question: string, type: string, userAnswer: string): Promise<string> {
-    const llm = new LLMService();
+    const llm = LLMService.getInstance();
 
     const systemPrompt = `You are a professional technical interviewer and executive career coach. 
 Evaluate the candidate's response to the interview question.

@@ -10,5 +10,6 @@ export interface MockInterview extends Document {
   performanceScore: number;
   feedback: string[];
   actionItems: string[];
+  completedActionItems: string[];
   createdAt: Date;
 }

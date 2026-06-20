@@ -47,6 +47,7 @@ export class ConsoleComponent {
   }
 
   toggleExpand(event: MouseEvent) {
+    this.isMaximized.update(() => false);
     this.isExpanded.update(val => !val);
   }
 

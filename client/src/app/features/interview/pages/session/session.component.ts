@@ -59,6 +59,17 @@ export class InterviewSessionComponent implements OnInit {
     return activeIdx < totalCount - 1 || this.roundCompleted();
   });
 
+  /** True when session status is 'completed' — hides all input controls */
+  isViewOnlyMode = computed(() => this.session()?.status === 'completed');
+
+  /** Average score across evaluated questions for the view-mode banner */
+  viewOnlyAvgScore = computed(() => {
+    const evaluated = this.questions().filter(q => q.evaluation);
+    if (evaluated.length === 0) return null;
+    const sum = evaluated.reduce((acc, q) => acc + (q.evaluation?.score ?? 0), 0);
+    return Math.round(sum / evaluated.length);
+  });
+
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -279,6 +290,11 @@ export class InterviewSessionComponent implements OnInit {
   }
 
   goBack() {
+    const from = this.route.snapshot.queryParamMap.get('from');
+    if (from === 'analytics') {
+      this.router.navigate(['/analytics']);
+      return;
+    }
     const sess = this.session();
     if (sess && sess.jobId && sess.jobId !== 'generic') {
       this.router.navigate(['/jobs', sess.jobId]);

@@ -8,4 +8,8 @@ export interface Job {
   portal: string;
   postedDate?: string;
   salary?: string;
+  salaryMinLpa?: number;
+  salaryMaxLpa?: number;
+  salaryConfidence?: 'explicit' | 'unknown';
+  descriptionSource?: 'tavily-extract' | 'search-snippet';
 }

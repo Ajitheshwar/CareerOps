@@ -106,7 +106,7 @@ async function retrieveHybridContext(query: string, llm: LLMService): Promise<st
 
 // Retrieve Context Node
 async function retrieveContextNode(state: typeof MentorState.State) {
-  const llm = new LLMService();
+  const llm = LLMService.getInstance();
   const lastMessage = state.messages[state.messages.length - 1]?.content || "";
   const context = await retrieveHybridContext(String(lastMessage), llm);
   return { retrievedContext: context };
@@ -114,7 +114,7 @@ async function retrieveContextNode(state: typeof MentorState.State) {
 
 // Generate Response Node
 async function generateResponseNode(state: typeof MentorState.State) {
-  const llm = new LLMService();
+  const llm = LLMService.getInstance();
   const messages = state.messages;
   
   const systemPrompt = `You are a Senior Full-Stack Career Mentor Agent and executive recruitment coach.

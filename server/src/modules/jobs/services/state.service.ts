@@ -132,7 +132,7 @@ export class StateService {
     // Save profile and generate embedding in background
     const saveProfileWithEmbedding = async () => {
       try {
-        const llm = new LLMService();
+        const llm = LLMService.getInstance();
         const embedding = await llm.embedText(resumeText);
         
         await UserRepository.saveUserProfile({

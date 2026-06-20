@@ -24,5 +24,7 @@ router.post('/interview/plan', validateBody(['jobId']), InterviewController.gene
 // Legacy Mock Interview History
 router.get('/interviews', InterviewLegacyController.getInterviews);
 router.post('/interviews', validateBody(['jobId', 'jobTitle', 'company']), InterviewLegacyController.saveInterview);
+router.patch('/interviews/:id/action-item', InterviewLegacyController.patchActionItem);
 
 export default router;
+

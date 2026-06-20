@@ -5,7 +5,7 @@ import { SKIP_SYSTEM_PROMPT, getSkipUserPrompt } from '../prompts/skip.prompt';
 import { InterviewEvaluation } from '../models/interview-session.model';
 
 export class AnswerEvaluatorAgent {
-  private llm = new LLMService();
+  private llm = LLMService.getInstance();
 
   async evaluate(
     questionText: string,

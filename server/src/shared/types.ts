@@ -4,6 +4,10 @@ export interface Job {
   company: string;
   location: string;
   salary?: string;
+  salaryMinLpa?: number;
+  salaryMaxLpa?: number;
+  salaryConfidence?: 'explicit' | 'unknown';
+  descriptionSource?: 'tavily-extract' | 'search-snippet';
   description: string;
   url?: string;
   source: string;

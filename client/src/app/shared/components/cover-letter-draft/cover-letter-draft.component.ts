@@ -1,10 +1,11 @@
 import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MarkdownPipe } from '../../pipes/markdown.pipe';
 
 @Component({
   selector: 'app-cover-letter-draft',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MarkdownPipe],
   templateUrl: './cover-letter-draft.component.html',
   styleUrls: ['./cover-letter-draft.component.css']
 })

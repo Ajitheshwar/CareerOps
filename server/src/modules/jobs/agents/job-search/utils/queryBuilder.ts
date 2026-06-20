@@ -14,11 +14,13 @@ export function buildDork(
   if (extraTerm) {
     dork += ` ${extraTerm}`;
   }
-  dork += ` "${query}" "${location}"`;
+  dork += ` ${query} "${location}"`;
 
   let exclusionString = '';
   if (excludedPhrases && excludedPhrases.length > 0) {
-    const activeExclusions = excludedPhrases.slice(0, 8);
+    const activeExclusions = excludedPhrases
+      .filter(phrase => typeof phrase === 'string' && phrase.trim().length > 0)
+      .slice(0, 5);
     exclusionString = activeExclusions.map(phrase => {
       let cleaned = phrase.trim();
       if (!cleaned.startsWith('"') && !cleaned.startsWith('-')) {

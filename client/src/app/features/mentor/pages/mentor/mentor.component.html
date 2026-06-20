@@ -24,7 +24,7 @@
             <div class="avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
             <div class="bubble">
               <span class="sender-name">{{ msg.role === 'user' ? 'You' : 'Career Mentor' }}</span>
-              <div class="message-content" [innerHTML]="formatMessage(msg.content)"></div>
+              <div class="message-content markdown-body" [innerHTML]="msg.content | markdown"></div>
               <span class="timestamp">{{ msg.timestamp | date:'shortTime' }}</span>
             </div>
           </div>

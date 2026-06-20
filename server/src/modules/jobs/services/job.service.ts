@@ -30,7 +30,7 @@ export class JobService {
       finalResumeText = profile.resumeText;
     }
 
-    const llm = new LLMService();
+    const llm = LLMService.getInstance();
     const analyzer = new ResumeAnalyzerAgent(llm);
     
     const matchResult = await analyzer.run(
@@ -83,7 +83,7 @@ export class JobService {
     const listingId = jobData.id || Math.random().toString(36).substring(7);
 
     // Generate text embedding for job listings search
-    const llm = new LLMService();
+    const llm = LLMService.getInstance();
     const job_embedding = await llm.embedText(
       jobData.description || `${jobData.title} at ${jobData.company}`
     );
@@ -159,7 +159,7 @@ export class JobService {
     }
 
     // Run the exact same LLM analysis agent used by the main search pipeline
-    const llm = new LLMService();
+    const llm = LLMService.getInstance();
     const analyzer = new ResumeAnalyzerAgent(llm);
     const matchResult = await analyzer.run(
       profile.resumeText,
@@ -183,5 +183,4 @@ export class JobService {
     return JobRepository.updateJobFields(jobId, updates);
   }
 }
-
 
